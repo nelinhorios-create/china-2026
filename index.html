@@ -171,7 +171,12 @@ details.card[open] summary::after{content:"–"}
 .fld label,.fld .lb{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .fld input,.fld textarea,.fld select{width:100%;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 11px;font-size:16px}
 .fld textarea{min-height:56px;resize:vertical}
-.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:10px}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:12px}
+.row2 > .fld{overflow:hidden}
+/* iPhone: o campo de hora nativo tem largura mínima própria e invadia o campo do lado */
+.fld input[type=time],.fld select{-webkit-appearance:none;appearance:none;display:block;width:100%;max-width:100%;min-width:0;height:44px;line-height:22px;text-align:left}
+.fld input[type=time]::-webkit-date-and-time-value{text-align:left}
+.fld select{padding-right:30px;background-image:linear-gradient(45deg,transparent 50%,#8a948e 50%),linear-gradient(135deg,#8a948e 50%,transparent 50%);background-position:calc(100% - 16px) 19px,calc(100% - 11px) 19px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;text-overflow:ellipsis}
 .seg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));padding-right:16px}
 .seg::-webkit-scrollbar{display:none}
 .seg button{flex:none;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 12px;font-size:13.5px;font-weight:600;cursor:pointer}
@@ -370,6 +375,43 @@ const TYPES = {passeio:"Passeio", comida:"Comida", compras:"Compras", transporte
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const gm = q => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+// Mapas: na China o app que funciona é o Amap (高德地图). O link uri.amap.com abre o app se estiver instalado
+// (callnative=1) ou a página do Amap. A busca é feita pelo nome em chinês, dentro da cidade certa.
+const ZH_CITY = {sha:"上海", suz:"苏州", wx:"上饶", zjj:"张家界", furong:"永顺县", fh:"凤凰县", ctu:"成都", xian:"西安", pek:"北京"};
+const AMAP_ZH = { // consulta usada no roteiro → "nome em chinês|cidade" (cidade só quando é outra)
+  "The Bund Shanghai":"外滩", "Nanjing Road Pedestrian Street Shanghai":"南京路步行街", "Yu Garden Shanghai":"豫园",
+  "Huxinting Teahouse Yu Garden":"湖心亭茶楼", "Wukang Road Shanghai":"武康路", "Tianzifang Shanghai":"田子坊",
+  "Shanghai Tower Observation Deck":"上海中心大厦观光厅", "Shanghai Circus World ERA Intersection of Time":"上海马戏城",
+  "Shanghai Museum People's Square":"上海博物馆人民广场馆", "Shiliupu Wharf Huangpu River Cruise":"十六铺码头",
+  "Xintiandi Shanghai":"新天地", "Shanghai Wild Animal Park":"上海野生动物园", "Zhujiajiao Water Town":"朱家角古镇",
+  "West Lake Hangzhou":"西湖|杭州", "59 Yunnan North Road Huangpu Shanghai":"云南北路59号",
+  "Humble Administrator's Garden Suzhou":"拙政园", "Suzhou Museum":"苏州博物馆", "Pingjiang Road Suzhou":"平江路",
+  "Lingering Garden Suzhou":"留园", "Shantang Street Suzhou":"山塘街",
+  "Wangxian Valley Shangrao Jiangxi":"望仙谷|上饶",
+  "Wulingyuan Gate Zhangjiajie National Forest Park":"武陵源门票站", "Bailong Elevator Zhangjiajie":"百龙天梯",
+  "Tianmen Mountain Cableway Station Zhangjiajie":"天门山索道", "Zhangjiajie Grand Canyon Glass Bridge":"张家界大峡谷玻璃桥",
+  "Charming Xiangxi Theater Zhangjiajie":"魅力湘西大剧院", "Wulingyuan Biaozhimen Zhangjiajie":"武陵源标志门",
+  "Fenghuang Ancient Town Tuojiang":"凤凰古城|凤凰县",
+  "Kuanzhai Alley Chengdu":"宽窄巷子", "Jinli Ancient Street Chengdu":"锦里古街", "Wenshu Monastery Chengdu":"文殊院",
+  "Heming Teahouse People's Park Chengdu":"人民公园鹤鸣茶社", "Shufeng Yayun Sichuan Opera Chengdu":"蜀风雅韵",
+  "48 Shuinianhe Road Jinjiang Chengdu":"水碾河路48号",
+  "Bell Tower Xi'an":"西安钟楼", "Muslim Quarter Xi'an":"回民街", "Datang Everbright City Xi'an":"大唐不夜城",
+  "Emperor Qinshihuang's Mausoleum Site Museum Terracotta Army":"秦始皇帝陵博物院", "South Gate Yongning Gate Xi'an City Wall":"永宁门",
+  "Shuyuanmen Xi'an":"书院门", "Tang Dynasty Palace Show Xi'an":"唐乐宫", "Zhuque Gate Xi'an city wall":"朱雀门",
+  "Tiananmen Square Beijing":"天安门广场", "Palace Museum Forbidden City Beijing":"故宫博物院", "Jingshan Park Beijing":"景山公园",
+  "Summer Palace Beijing":"颐和园", "Temple of Heaven Beijing":"天坛公园", "Hongqiao Pearl Market Beijing":"红桥市场",
+  "Nanluoguxiang Beijing":"南锣鼓巷", "Wangfujing Street Beijing":"王府井步行街", "Mutianyu Great Wall":"慕田峪长城|北京",
+  "Red Theatre Beijing Legend of Kung Fu":"红剧场", "Beijing International Hotel Jianguomennei":"北京国际饭店"
+};
+const amap = (kw, cityName) => `https://uri.amap.com/search?keyword=${encodeURIComponent(kw)}${cityName ? "&city=" + encodeURIComponent(cityName) : ""}&view=map&src=china2026&callnative=1`;
+// botões de mapa: Amap (principal) + Google (reserva). zh = nome em chinês, quando já existe (restaurantes, hotéis, itens novos)
+function mapBtns(url, city, zh){
+  const m = url && url.match(/google\.com\/maps\/search\/\?api=1&query=([^&]+)/), q = m ? decodeURIComponent(m[1]) : "";
+  if(!url && !zh) return "";
+  if(!m && !zh) return `<a class="pill" href="${esc(url)}" target="_blank" rel="noopener">Site oficial</a>`;
+  const [kw, c] = zh ? [zh] : (AMAP_ZH[q] || q).split("|");
+  return `<a class="pill pri" href="${esc(amap(kw, c || ZH_CITY[city] || ""))}" target="_blank" rel="noopener">高德 Amap</a>${m ? `<a class="pill" href="${esc(url)}" target="_blank" rel="noopener">Google</a>` : ""}`;
+}
 const hm = t => { const m = String(t || "").match(/(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : -1; };
 const dd = iso => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d); };
 const fmtD = iso => { const d = dd(iso); return `${d.getDate()}/${String(d.getMonth() + 1).padStart(2, "0")}`; };
@@ -556,10 +598,10 @@ function renderDay(){
           ${it.place && !it.rest ? `<div class="sub">📍 ${esc(it.place)}</div>` : ""}
           ${it.rest ? `<div class="sub">📍 ${esc(it.place)}${it.rest.price ? ` · ≈ ¥${esc(it.rest.price)} por pessoa` : ""}</div>` : ""}
           ${it.opts.length ? `<div class="opts">${it.opts.map((o, j) => `<div class="opt"><b>${esc(o.name)}</b>${o.zh ? `<span class="zh">${esc(o.zh)}</span>` : ""}<p>${esc(o.desc)}</p><p>📍 ${esc(o.near)}${o.price ? ` · ≈ ¥${esc(o.price)} por pessoa` : ""}</p>
-             <div class="acts"><a class="pill" href="${esc(o.url)}" target="_blank" rel="noopener">Mapa</a>${o.zh ? `<button class="pill" data-show="${esc(o.zh)}" data-sub="${esc(o.name)}">Mostrar em chinês</button>` : ""}</div></div>`).join("")}</div>` : ""}
+             <div class="acts">${mapBtns(o.url, d.city, o.zh)}${o.zh ? `<button class="pill" data-show="${esc(o.zh)}" data-sub="${esc(o.name)}">Mostrar em chinês</button>` : ""}</div></div>`).join("")}</div>` : ""}
           ${it.hidden ? `<div class="sub">Item oculto: não aparece no roteiro do dia.</div>` : ""}
           <div class="acts">
-            ${it.url ? `<a class="pill" href="${esc(it.url)}" target="_blank" rel="noopener">Mapa</a>` : ""}
+            ${mapBtns(it.url, d.city, it.zh || (it.rest && it.rest.zh) || "")}
             ${showZh ? `<button class="pill" data-show="${esc(showZh)}" data-sub="${esc(it.title)}">Mostrar em chinês</button>` : ""}
             ${S.readonly ? "" : `<button class="pill" data-edit="${esc(it.key)}">Editar</button>`}
             ${S.readonly ? "" : it.hidden ? `<button class="pill" data-unhide="${esc(it.key)}">Mostrar de novo</button>` : it.base ? `<button class="pill warn" data-hide="${esc(it.key)}">Ocultar</button>` : ""}
@@ -583,7 +625,7 @@ function renderDay(){
   const hotel = h ? `<h2 class="sec">Onde dormir</h2>${hotelCard(h)}` : "";
   const alerts = d.a.length ? `<h2 class="sec">Atenção</h2>${d.a.map(x => `<div class="alert">${esc(x)}</div>`).join("")}` : "";
   const extra = `<h2 class="sec">Mais sobre o dia</h2>
-    ${d.alt.length ? `<details class="card" open><summary>Outras ideias para hoje</summary>${d.alt.map(([n, t, url, p], j) => `<div class="idea" style="margin-top:10px"><b>${esc(n)}</b><p>${esc(t)}</p>${p ? `<p>${esc(p)}</p>` : ""}<div class="acts">${url ? `<a class="pill" href="${esc(url)}" target="_blank" rel="noopener">Mapa</a>` : ""}${S.readonly ? "" : `<button class="pill pri" data-idea="${j}">Adicionar ao dia</button>`}</div></div>`).join("")}</details>` : ""}
+    ${d.alt.length ? `<details class="card" open><summary>Outras ideias para hoje</summary>${d.alt.map(([n, t, url, p], j) => `<div class="idea" style="margin-top:10px"><b>${esc(n)}</b><p>${esc(t)}</p>${p ? `<p>${esc(p)}</p>` : ""}<div class="acts">${mapBtns(url, d.city)}${S.readonly ? "" : `<button class="pill pri" data-idea="${j}">Adicionar ao dia</button>`}</div></div>`).join("")}</details>` : ""}
     ${d.tips.length ? `<details class="card"><summary>Dicas</summary><ul class="tips" style="margin-top:10px">${d.tips.map(x => `<li>${esc(x)}</li>`).join("")}</ul></details>` : ""}
     ${d.wx ? `<details class="card"><summary>Tempo em dezembro · ${esc(d.cn)}</summary><p>${esc(d.wx)}</p>${d.wxday ? `<p><b>${esc(d.wxday)}</b></p>` : ""}<p>Média histórica, não previsão. <a href="https://www.google.com/search?q=${encodeURIComponent("previsão do tempo " + EN[d.city])}" target="_blank" rel="noopener">Ver a previsão</a></p></details>` : ""}`;
 
@@ -609,7 +651,7 @@ function hotelCard(h){
   return `<div class="card"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">${esc(h.n)}</h3><span class="status ok">Reservado</span></div>
     <p>${fmtD(h.from)} a ${fmtD(h.to)} · ${h.nights} ${h.nights > 1 ? "noites" : "noite"}</p><p>${esc(h.addr)}</p><p>${esc(h.near)}</p>
     <div class="zhaddr">${esc(h.zh)}</div>
-    <div class="acts"><button class="pill pri" data-show="${esc(h.zh)}" data-sub="${esc(h.n)}" data-driver="1">Mostrar ao motorista</button><a class="pill" href="${esc(gm(h.q))}" target="_blank" rel="noopener">Mapa</a></div></div>`;
+    <div class="acts"><button class="pill pri" data-show="${esc(h.zh)}" data-sub="${esc(h.n)}" data-driver="1">Mostrar ao motorista</button>${mapBtns(gm(h.q), h.city, AMAP_ZH[h.q] ? "" : h.zh.split(" ")[0])}</div></div>`;
 }
 function wireCommon(){
   document.querySelectorAll("[data-show]").forEach(b => b.onclick = e => { if(e.target.closest("[data-say]")) return; showBig(b.dataset.show, b.dataset.sub, b.dataset.driver ? "请带我们去这个地址，谢谢。" : "", b.dataset.py || ""); });
@@ -711,7 +753,7 @@ function openForm(it, preset){
     <div class="fld"><label for="fNote">Detalhes</label><textarea id="fNote" maxlength="600" placeholder="Reserva, preço, o que pedir, quem vai…">${esc(v.note || "")}</textarea></div>
     ${base ? "" : `<details class="more"${v.place || v.zh ? " open" : ""}><summary>+ Local no mapa e nome em chinês</summary>
     <div class="fld"><label for="fPlace">Local ou endereço (abre no mapa)</label><input id="fPlace" maxlength="200" value="${esc(v.place || "")}" placeholder="Ex.: Xintiandi"></div>
-    <div class="fld"><label for="fZh">Nome em chinês (para mostrar)</label><input id="fZh" maxlength="120" value="${esc(v.zh || "")}" placeholder="Ex.: 鼎泰丰"></div></details>`}
+    <div class="fld"><label for="fZh">Nome em chinês (para mostrar e achar no Amap)</label><input id="fZh" maxlength="120" value="${esc(v.zh || "")}" placeholder="Ex.: 鼎泰丰"></div></details>`}
     </div>
     <div class="sfoot">
       <button type="submit" class="pill pri">Salvar</button>
