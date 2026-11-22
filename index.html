@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>China 2026</title>
+<meta name="theme-color" content="#B3362A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="China 2026">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;900&display=swap">
+<style>
+/* Layout: uma coluna de app (máx. 560px), cabeçalho fixo com relógio da China e faixa de dias, abas embaixo. */
+:root{
+  --bg:#EEF1EC; --surface:#FFFFFF; --sunk:#E3E8E1; --ink:#1A1F1C; --muted:#5C665F; --line:#D3D9D1;
+  --accent:#B3362A; --accent-ink:#FFFFFF; --jade:#2C7660; --gold:#9A6C12; --sky:#2B618A; --plum:#7A4A7E;
+  --ok-bg:#DDEFE6; --warn-bg:#F8ECD3; --shadow:0 1px 2px rgba(20,30,25,.06),0 6px 20px rgba(20,30,25,.07);
+  --f-disp:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-zh:"Noto Serif SC","Songti SC","SimSun",serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1311; --surface:#181E1B; --sunk:#202824; --ink:#E7ECE8; --muted:#9AA69F; --line:#2B3430;
+  --accent:#E06450; --accent-ink:#1A0F0C; --jade:#5BB797; --gold:#D6A84C; --sky:#72AAD3; --plum:#C292C6;
+  --ok-bg:#1D3A2F; --warn-bg:#3A2F17; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1311; --surface:#181E1B; --sunk:#202824; --ink:#E7ECE8; --muted:#9AA69F; --line:#2B3430;
+  --accent:#E06450; --accent-ink:#1A0F0C; --jade:#5BB797; --gold:#D6A84C; --sky:#72AAD3; --plum:#C292C6;
+  --ok-bg:#1D3A2F; --warn-bg:#3A2F17; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font:15px/1.45 var(--f-body);-webkit-tap-highlight-color:transparent}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:var(--sky)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:560px;margin:0 auto;padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* cabeçalho */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:10px;padding-block:10px 6px}
+.seal{width:30px;height:30px;border-radius:6px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font:900 17px/1 var(--f-zh);flex:none}
+.brand{font:800 17px/1.1 var(--f-disp);letter-spacing:-.01em}
+.brand small{display:block;font:500 11.5px/1.2 var(--f-body);color:var(--muted);letter-spacing:0}
+.clock{margin-left:auto;text-align:right;font-variant-numeric:tabular-nums;line-height:1.15}
+.clock b{font:700 15px var(--f-body)}
+.clock span{display:block;font-size:11px;color:var(--muted)}
+.sync{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:5px;vertical-align:1px}
+.sync.ok{background:var(--jade)} .sync.warn{background:var(--gold)} .sync.err{background:var(--accent)}
+.strip{display:flex;gap:6px;overflow-x:auto;padding-block:6px 10px;scrollbar-width:none;scroll-snap-type:x proximity}
+.strip::-webkit-scrollbar{display:none}
+.dchip{flex:none;scroll-snap-align:center;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:5px 9px 6px;text-align:left;cursor:pointer;min-width:62px;position:relative}
+.dchip .w{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.dchip .n{font:700 15px/1.1 var(--f-body);font-variant-numeric:tabular-nums}
+.dchip .c{font-size:11px;color:var(--muted);white-space:nowrap}
+.dchip[aria-current="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.dchip[aria-current="true"] .w,.dchip[aria-current="true"] .c{color:inherit;opacity:.75}
+.dchip.today::after{content:"hoje";position:absolute;top:-7px;right:6px;background:var(--accent);color:var(--accent-ink);font:700 9px/1 var(--f-body);padding:3px 5px;border-radius:4px;letter-spacing:.04em;text-transform:uppercase}
+.dchip.move .n::after{content:" ↗";font-size:11px;color:var(--jade)}
+.dchip[aria-current="true"].move .n::after{color:inherit}
+
+/* herói do dia */
+.hero{position:relative;margin-top:12px;border-radius:16px;overflow:hidden;background:var(--sunk);aspect-ratio:16/10;max-width:100%}
+.hero img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .25s}
+.hero .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.72));pointer-events:none}
+.hero .txt{position:absolute;left:14px;right:14px;bottom:12px;color:#fff}
+.hero .zhbig{position:absolute;right:12px;top:8px;font:900 44px/1 var(--f-zh);color:rgba(255,255,255,.88);text-shadow:0 2px 12px rgba(0,0,0,.35);writing-mode:vertical-rl;letter-spacing:.08em}
+.hero h1{font:800 26px/1.05 var(--f-disp);margin:2px 0 4px;text-wrap:balance;letter-spacing:-.015em}
+.hero .meta{font-size:12.5px;opacity:.92}
+.hero .cap{font-size:11px;opacity:.75;margin-top:4px}
+.dots{position:absolute;top:12px;left:14px;display:flex;gap:4px}
+.dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.45)} .dots i.on{background:#fff}
+.hero.noimg{aspect-ratio:auto;padding:18px 14px 14px;background:var(--ink)} .hero.noimg .txt{position:static}
+.plan{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.plan span{font-size:12.5px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+
+/* agora */
+.now{margin-top:12px;border-radius:12px;background:var(--ink);color:var(--bg);padding:10px 12px;display:grid;gap:2px}
+.now small{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.7}
+.now b{font-weight:600}
+
+/* seções */
+h2.sec{font:700 11.5px/1 var(--f-body);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:22px 0 8px;display:flex;align-items:center;gap:8px}
+h2.sec .cnt{font-weight:600;letter-spacing:0;text-transform:none}
+h2.sec button{margin-left:auto}
+.lnkbtn{background:none;border:0;color:var(--sky);font-weight:600;font-size:13px;padding:4px 0;cursor:pointer;text-transform:none;letter-spacing:0}
+
+/* linha do tempo */
+.tl{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.it{display:grid;grid-template-columns:52px 1fr 36px;gap:0 10px;padding:11px 12px 11px 12px;border-top:1px solid var(--line);align-items:start;position:relative}
+.it:first-child{border-top:0}
+.it .t{font:700 14px/1.35 var(--f-body);font-variant-numeric:tabular-nums;color:var(--ink)}
+.it .body{min-width:0;cursor:pointer}
+.it .ttl{font-weight:500;line-height:1.35}
+.it .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.it .tag{display:inline-block;font:700 10px/1 var(--f-body);text-transform:uppercase;letter-spacing:.06em;padding:3px 6px;border-radius:4px;margin-right:6px;vertical-align:1px;color:var(--c);background:color-mix(in srgb,var(--c) 13%,transparent)}
+.it.k-passeio{--c:var(--jade)} .it.k-comida{--c:var(--accent)} .it.k-compras{--c:var(--plum)} .it.k-transporte{--c:var(--sky)} .it.k-trem{--c:var(--sky)} .it.k-nota{--c:var(--gold)} .it.k-hotel{--c:var(--muted)}
+.it::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0;background:var(--c);opacity:.0}
+.it.cur::before{opacity:1}
+.it.cur{background:color-mix(in srgb,var(--accent) 6%,var(--surface))}
+.it.done .ttl{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.it.hid{opacity:.55}
+.it .mine{font-size:10.5px;color:var(--gold);font-weight:700;margin-left:4px}
+.chk{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);background:transparent;cursor:pointer;display:grid;place-items:center;padding:0;justify-self:end}
+.chk svg{width:15px;height:15px;opacity:0}
+.it.done .chk{background:var(--jade);border-color:var(--jade);color:var(--surface)} .it.done .chk svg{opacity:1}
+.opts{margin-top:8px;display:grid;gap:8px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg)}
+.opt b{font-weight:600}
+.zh{font-family:var(--f-zh);font-weight:600}
+.opt .zh{margin-left:6px;color:var(--muted)}
+.opt p{margin:3px 0 0;font-size:13px;color:var(--muted)}
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.pill{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;gap:5px}
+.pill.pri{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.pill.warn{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.empty{padding:18px 14px;color:var(--muted);text-align:center}
+
+/* cartões */
+.card{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:13px 14px}
+.card + .card{margin-top:8px}
+.card h3{font:700 16px/1.25 var(--f-disp);margin:0 0 4px;letter-spacing:-.005em}
+.card p{margin:4px 0 0;font-size:13.5px;color:var(--muted)}
+.status{display:inline-block;font:700 10.5px/1 var(--f-body);letter-spacing:.06em;text-transform:uppercase;padding:4px 7px;border-radius:5px}
+.status.ok{background:var(--ok-bg);color:var(--jade)} .status.todo{background:var(--warn-bg);color:var(--gold)}
+.trn{display:grid;grid-template-columns:auto 1fr auto;gap:2px 12px;align-items:baseline;margin-top:8px;font-variant-numeric:tabular-nums}
+.trn .hh{font:800 22px/1 var(--f-disp)} .trn .st{font-size:13.5px} .trn .du{font-size:12px;color:var(--muted)}
+.mv{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 0;border-top:1px solid var(--line)}
+.mv:first-of-type{border-top:0;padding-top:0}
+.mv b{font-weight:600;font-size:14px} .mv .how{font-size:12.5px;color:var(--muted);grid-column:1} .mv .tm{font-weight:700;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap} .mv .co{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+.zhaddr{font:600 15px/1.5 var(--f-zh);color:var(--ink);background:var(--bg);border-radius:8px;padding:8px 10px;margin-top:8px;word-break:break-all}
+.alert{background:var(--warn-bg);border-radius:10px;padding:9px 12px;font-size:13.5px}
+.alert + .alert{margin-top:6px}
+ul.tips{margin:0;padding-left:18px;font-size:14px} ul.tips li + li{margin-top:5px}
+details.card summary{cursor:pointer;font-weight:600;list-style:none;display:flex;align-items:center;gap:8px}
+details.card summary::-webkit-details-marker{display:none}
+details.card summary::after{content:"+";margin-left:auto;font:700 18px/1 var(--f-body);color:var(--muted)}
+details.card[open] summary::after{content:"–"}
+.idea + .idea{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.idea b{font-weight:600}
+
+/* abas */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+.tabs nav{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tabs button{border:0;background:none;padding:9px 4px 10px;display:grid;justify-items:center;gap:3px;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer}
+.tabs svg{width:22px;height:22px}
+.tabs button[aria-selected="true"]{color:var(--accent)}
+.fab{position:fixed;z-index:31;right:max(18px,calc(env(safe-area-inset-right,0px) + 18px));bottom:calc(74px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:18px;border:0;background:var(--accent);color:var(--accent-ink);box-shadow:0 6px 18px rgba(179,54,42,.35);cursor:pointer;display:grid;place-items:center}
+.fab svg{width:26px;height:26px}
+@media (min-width:600px){.fab{right:calc(50% - 280px + 18px)}}
+
+/* folha (formulário) e cartão para mostrar */
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(10,14,12,.45);display:flex;align-items:flex-end;justify-content:center;padding-top:env(safe-area-inset-top,0px)}
+/* folha em 3 partes: título, campos (rolam) e botões (sempre visíveis) */
+.sheet{background:var(--surface);width:100%;max-width:560px;border-radius:18px 18px 0 0;max-height:calc(100% - 12px);display:flex;flex-direction:column;overflow:hidden}
+.sheet .shead,.sheet .sbody,.sheet .sfoot{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sheet .shead{padding-block:14px 8px;display:flex;align-items:center;gap:10px}
+.sheet h3{font:800 19px/1.2 var(--f-disp);margin:0}
+.sheet .x{margin-left:auto;width:34px;height:34px;border-radius:50%;border:0;background:var(--sunk);font-size:20px;line-height:1;cursor:pointer;flex:none}
+.sheet .sbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-block:2px 6px}
+.sheet .sfoot{padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;background:var(--surface)}
+.sheet .sfoot .pill{padding:10px 16px;font-size:14px}
+.sheet .sfoot .pri{flex:1;justify-content:center}
+.fld{display:grid;gap:4px;margin-bottom:10px;min-width:0}
+.fld label,.fld .lb{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.fld input,.fld textarea,.fld select{width:100%;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 11px;font-size:16px}
+.fld textarea{min-height:56px;resize:vertical}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:10px}
+.seg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));padding-right:16px}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:none;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 12px;font-size:13.5px;font-weight:600;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.more{margin:0 0 10px}
+.more summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--sky);list-style:none;padding:4px 0}
+.more summary::-webkit-details-marker{display:none}
+.more[open] summary{margin-bottom:8px}
+.show{position:fixed;inset:0;z-index:50;background:#FFFFFF;color:#111;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:24px max(20px,env(safe-area-inset-left,0px)) 24px max(20px,env(safe-area-inset-right,0px))}
+.show .big{font:900 clamp(34px,11vw,64px)/1.25 var(--f-zh);word-break:break-all;max-width:100%}
+.show .mid{font:600 clamp(20px,6vw,30px)/1.4 var(--f-zh);margin-top:16px;max-width:100%;word-break:break-all}
+.show .pt{font-size:15px;color:#555;margin-top:16px}
+.show .py{font-size:18px;color:#333;margin-top:8px}
+.showacts{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:28px}
+.showacts svg{width:18px;height:18px;margin-right:6px;vertical-align:-3px}
+.show .showacts button{margin-top:0}
+.show button.on{background:#B3362A;color:#fff;border-color:#B3362A}
+.phr.tts{grid-template-columns:1fr auto 40px}
+.phr.tts .z{grid-column:2}
+.say{grid-row:1/3;grid-column:3;align-self:center;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
+.say svg{width:19px;height:19px}
+.say.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.show button{margin-top:28px;border:1px solid #ccc;background:#f3f3f3;color:#111;border-radius:999px;padding:10px 22px;font-weight:700;cursor:pointer}
+.toast{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(140px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:13.5px;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+.banner{margin-top:10px;font-size:12.5px;background:var(--warn-bg);border-radius:10px;padding:8px 11px}
+
+/* frases e info */
+.phr{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.phr:first-child{border-top:0;padding-top:2px}
+.phr .p{font-weight:600} .phr .y{font-size:12.5px;color:var(--muted);grid-column:1}
+.phr .z{grid-row:1/3;grid-column:2;font:600 19px/1.3 var(--f-zh);align-self:center;text-align:right}
+.know h3{font-size:15px}
+.num{font:800 24px/1 var(--f-disp);font-variant-numeric:tabular-nums}
+/* login e conta */
+:root{padding-top:env(safe-area-inset-top,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+.auth{max-width:420px;margin:0 auto;padding-block:48px 40px;min-height:100%}
+.auth .seal{width:56px;height:56px;font-size:32px;border-radius:12px}
+.auth h1{font:800 30px/1.05 var(--f-disp);margin:16px 0 6px;letter-spacing:-.02em}
+.auth p.lead{color:var(--muted);margin:0 0 22px}
+.auth .seg{margin-bottom:16px;margin-right:0}
+.auth .fld input{font-size:16px}
+.auth .pill.pri{width:100%;justify-content:center;padding:12px 16px;font-size:15px}
+.err{color:var(--accent);font-size:13.5px;margin:4px 0 10px;min-height:1em}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.swatches button{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer;background:var(--c)}
+.swatches button[aria-pressed="true"]{border-color:var(--ink)}
+.avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font:700 16px/1 var(--f-body);color:#fff;background:var(--c,#2C7660);flex:none}
+.switch{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+.switch:first-of-type{border-top:0}
+.switch span{flex:1;min-width:0} .switch small{display:block;color:var(--muted);font-size:12.5px}
+.switch input[type=checkbox]{width:44px;height:26px;appearance:none;-webkit-appearance:none;background:var(--line);border-radius:999px;position:relative;cursor:pointer;flex:none;transition:background .15s}
+.switch input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.switch input[type=checkbox]:checked{background:var(--jade)} .switch input[type=checkbox]:checked::after{transform:translateX(18px)}
+.switch select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 8px;font-size:14px}
+.by{font-size:10.5px;font-weight:700;margin-left:4px;color:var(--c,var(--gold))}
+.tabs nav{grid-template-columns:repeat(5,1fr)!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+</head>
+<body>
+
+<section class="auth gut" id="auth" hidden>
+  <div class="seal" aria-hidden="true">游</div>
+  <h1>China 2026</h1>
+  <p class="lead">Guia de bolso da viagem. Entre com a sua conta de viajante.</p>
+  <div class="seg" id="authMode"><button type="button" data-m="in" aria-pressed="true">Entrar</button><button type="button" data-m="up" aria-pressed="false">Criar conta</button></div>
+  <form id="authForm">
+    <div class="fld" id="nameFld" hidden><label for="aName">Seu nome</label><input id="aName" autocomplete="name" maxlength="40"></div>
+    <div class="fld"><label for="aEmail">E-mail</label><input id="aEmail" type="email" autocomplete="email" required></div>
+    <div class="fld"><label for="aPass">Senha</label><input id="aPass" type="password" autocomplete="current-password" minlength="6" required></div>
+    <p class="err" id="aErr" role="alert"></p>
+    <button type="submit" class="pill pri" id="aBtn">Entrar</button>
+  </form>
+  <p style="font-size:12.5px;color:var(--muted);margin-top:18px">Só os e-mails cadastrados como viajantes conseguem criar conta.</p>
+</section>
+
+<div class="app" id="app" hidden>
+  <header class="top">
+    <div class="gut">
+      <div class="bar">
+        <div class="seal" aria-hidden="true">游</div>
+        <div class="brand">China 2026<small id="syncTxt"><span class="sync"></span>carregando…</small></div>
+        <div class="clock" aria-live="off"><b id="cnTime">--:--</b><span id="brTime">China · Brasil --:--</span></div>
+      </div>
+      <div class="strip" id="strip" role="tablist" aria-label="Dias da viagem"></div>
+    </div>
+  </header>
+  <main class="gut" id="main"></main>
+</div>
+<button class="fab" id="fab" hidden aria-label="Adicionar ao dia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+<div class="tabs" id="tabs" hidden><nav role="tablist" aria-label="Seções">
+  <button role="tab" data-tab="dia" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Roteiro</button>
+  <button role="tab" data-tab="hoteis" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V8l9-4 9 4v12"/><path d="M8 20v-5h8v5M8 10.5h.01M12 10.5h.01M16 10.5h.01"/></svg>Hotéis</button>
+  <button role="tab" data-tab="frases" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>Frases</button>
+  <button role="tab" data-tab="info" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8h.01"/></svg>Info</button>
+  <button role="tab" data-tab="conta" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.6 4-5.3 7.5-5.3s6.3 1.7 7.5 5.3"/></svg>Conta</button>
+</nav></div>
+<div id="layer"></div>
+
+<script>
+// O roteiro não fica no código (o repositório é público): vem da tabela "trip" do Supabase depois do login
+// e fica guardado no aparelho para abrir sem internet.
+let TRIP = null, DAYS = [];
+const EN = {sha:"Shanghai", suz:"Suzhou", wx:"Shangrao Jiangxi", zjj:"Zhangjiajie", furong:"Furong Town Hunan", fh:"Fenghuang", ctu:"Chengdu", xian:"Xi'an", pek:"Beijing"};
+const WD = ["dom","seg","ter","qua","qui","sex","sáb"], WDL = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+const TYPES = {passeio:"Passeio", comida:"Comida", compras:"Compras", transporte:"Transporte", trem:"Trem", nota:"Nota", hotel:"Hotel"};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const gm = q => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+const hm = t => { const m = String(t || "").match(/(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : -1; };
+const dd = iso => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d); };
+const fmtD = iso => { const d = dd(iso); return `${d.getDate()}/${String(d.getMonth() + 1).padStart(2, "0")}`; };
+const ls = { get(k, f){ try{ const v = localStorage.getItem(k); return v == null ? f : JSON.parse(v); }catch(e){ return f; } },
+             set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} } };
+
+// Hora local da China (UTC+8) e do Brasil (UTC−3), independente do fuso do celular
+function zoneNow(tz){
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {timeZone:tz, year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", hourCycle:"h23"}).formatToParts(new Date()).map(x => [x.type, x.value]));
+  return {iso:`${p.year}-${p.month}-${p.day}`, hm:`${p.hour}:${p.minute}`, min:+p.hour * 60 + +p.minute};
+}
+function tick(){
+  const cn = zoneNow("Asia/Shanghai"), br = zoneNow("America/Sao_Paulo");
+  $("#cnTime").textContent = cn.hm; $("#brTime").textContent = `China · Brasil ${br.hm}`;
+  return cn;
+}
+
+/* ---------- Supabase: login, roteiro e edições compartilhadas ---------- */
+// Tabela "edits": uma linha por item alterado ou criado (id, body, author).
+// Itens do roteiro original: id "<dia>~h<n>" com {t,title,note,hidden,done}. Itens novos: id "n-<...>" com {kind:"new", day, type, t, title, note, place, zh}.
+const CFG = window.APP_CONFIG || {};
+const configured = !!(window.supabase && CFG.SUPABASE_URL && /^https:\/\//.test(CFG.SUPABASE_URL) && CFG.SUPABASE_ANON_KEY && !/COLE/.test(CFG.SUPABASE_ANON_KEY));
+const sb = configured ? window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, {auth:{persistSession:true, autoRefreshToken:true}}) : null;
+// server = o que está no banco; pending = o que este aparelho mudou e ainda não enviou (sobrevive sem internet)
+const S = {server:ls.get("guia26.server", {}), pending:ls.get("guia26.pending", {}), edits:{}, me:null, profile:null, profiles:ls.get("guia26.profiles", {}), online:false, readonly:false};
+function setSync(kind, txt){ $("#syncTxt").innerHTML = `<span class="sync ${kind}"></span>${esc(txt)}`; }
+function recompute(){
+  const e = {...S.server};
+  Object.entries(S.pending).forEach(([id, v]) => { if(v === null) delete e[id]; else e[id] = {...v, _by:S.me?.id}; });
+  S.edits = e;
+}
+function syncLabel(){
+  const n = Object.keys(S.pending).length;
+  if(!navigator.onLine) setSync("warn", n ? `sem internet · ${n} alteração(ões) para enviar` : "sem internet · cópia salva no aparelho");
+  else if(n) setSync("warn", `enviando ${n} alteração(ões)…`);
+  else setSync(S.online ? "ok" : "warn", S.online ? "sincronizado com o grupo" : "conectando…");
+}
+const rowToEdit = r => ({...(r.body || {}), _by:r.author});
+async function loadEdits(){
+  const {data, error} = await sb.from("edits").select("id, body, author");
+  if(error) throw error;
+  S.server = {}; data.forEach(r => S.server[r.id] = rowToEdit(r)); ls.set("guia26.server", S.server);
+}
+async function loadProfiles(){
+  const {data} = await sb.from("profiles").select("id, name, color, settings");
+  if(!data) return;
+  S.profiles = {}; data.forEach(p => S.profiles[p.id] = {name:p.name, color:p.color}); ls.set("guia26.profiles", S.profiles);
+  S.profile = data.find(p => p.id === S.me.id) || null;
+}
+async function loadTrip(){
+  const {data, error} = await sb.from("trip").select("data").eq("id", "main").maybeSingle();
+  if(error) throw error;
+  if(data && data.data){ setTrip(data.data); ls.set("guia26.trip", data.data); }
+}
+function setTrip(t){ TRIP = t; DAYS = t.days || []; if(cur >= DAYS.length) cur = 0; }
+let flushing = false;
+async function flush(){
+  if(flushing || !sb || !navigator.onLine || !S.me) return;
+  flushing = true;
+  try{
+    for(const [id, v] of Object.entries(S.pending)){
+      const r = v === null ? await sb.from("edits").delete().eq("id", id)
+        : await sb.from("edits").upsert({id, body:v, author:S.me.id, updated_at:new Date().toISOString()});
+      if(r.error){
+        if(/permission|policy|42501/i.test(r.error.message + r.error.code)){ delete S.pending[id]; toast("Sem permissão para editar o roteiro."); }
+        else break; // rede: tenta de novo quando a conexão voltar
+      } else {
+        if(v === null) delete S.server[id]; else S.server[id] = {...v, _by:S.me.id};
+        delete S.pending[id];
+      }
+    }
+  } finally { flushing = false; ls.set("guia26.pending", S.pending); ls.set("guia26.server", S.server); recompute(); syncLabel(); }
+}
+function saveEdit(id, data){
+  if(data){ const {_by, ...clean} = data; data = clean; }
+  S.pending[id] = data || null; ls.set("guia26.pending", S.pending);
+  recompute(); render(); syncLabel(); flush();
+}
+const patchBase = (key, patch) => { const {_by, ...cur} = S.edits[key] || {}; saveEdit(key, {...cur, ...patch, at:Date.now()}); };
+let channel = null;
+function subscribe(){
+  if(channel) sb.removeChannel(channel);
+  channel = sb.channel("edits-live")
+    .on("postgres_changes", {event:"*", schema:"public", table:"edits"}, p => {
+      if(p.eventType === "DELETE") delete S.server[p.old.id]; else S.server[p.new.id] = rowToEdit(p.new);
+      ls.set("guia26.server", S.server); recompute(); render();
+    })
+    .subscribe(st => { S.online = st === "SUBSCRIBED"; syncLabel(); });
+}
+async function refreshAll(){
+  if(!navigator.onLine || !S.me) return;
+  try{ await Promise.all([loadTrip(), loadEdits(), loadProfiles()]); recompute(); if(DAYS.length){ buildStrip(); } render(); await flush(); }
+  catch(e){ setSync("err", "não deu para sincronizar agora"); }
+}
+addEventListener("online", () => { syncLabel(); refreshAll(); });
+addEventListener("offline", syncLabel);
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") refreshAll(); });
+
+/* ---------- Itens do dia ---------- */
+const MEAL = /almo[cç]o|jantar|caf[eé] da manh|lanche/i;
+function typeOf(x){
+  if(/^🛍/.test(x)) return "compras";
+  if(/^Trem |^Chegada à estação|^Chegar à estação/.test(x)) return "trem";
+  if(/^(Pouso|Voo|Check-in do voo)/.test(x)) return "transporte";
+  if(MEAL.test(x) && !/^(Metrô|Didi|Táxi)/.test(x)) return "comida";
+  if(/^(Check-in|Check-out|Pegar as malas|Separar|Entregar as malas|Dormir|Descanso)/.test(x)) return "hotel";
+  if(/^(Metrô|Didi|Táxi|Carro|Maglev|Ônibus|Volta|Caminhar|7 min a pé|10 min a pé)|Didi|Metrô linha/.test(x)) return "transporte";
+  return "passeio";
+}
+function dayItems(d){
+  const items = [];
+  d.h.forEach(([t, x, url], i) => items.push({key:`${d.id}~h${i}`, base:true, t, title:x.replace(/^🛍\s*/, ""), type:typeOf(x), url, opts:[]}));
+  // restaurantes sugeridos entram como opções da refeição mais próxima; sem refeição perto, viram item próprio
+  d.r.forEach(([t, meal, name, zh, desc, near, price], i) => {
+    const r = {name, zh, desc, near, price, meal, url:gm((zh || name) + " " + EN[d.city])};
+    const m = hm(t);
+    const host = items.filter(x => x.type === "comida" || MEAL.test(x.title)).sort((a, b) => Math.abs(hm(a.t) - m) - Math.abs(hm(b.t) - m))[0];
+    if(host && Math.abs(hm(host.t) - m) <= 60) host.opts.push(r);
+    else items.push({key:`${d.id}~r${i}`, base:true, t, title:name, type:"comida", note:desc, place:near, zh, url:r.url, opts:[], rest:r});
+  });
+  items.forEach(it => { const e = S.edits[it.key]; if(e){ it.orig = {t:it.t, title:it.title}; ["t","title","note","hidden","done"].forEach(k => { if(e[k] !== undefined && e[k] !== "") it[k] = e[k]; }); it.edited = !!(e.t || e.title || e.note); it.by = e._by; } });
+  Object.entries(S.edits).forEach(([id, e]) => { if(e.kind === "new" && e.day === d.id) items.push({key:id, base:false, by:e._by, t:e.t || "", title:e.title || "(sem título)", type:e.type || "passeio", note:e.note || "", place:e.place || "", zh:e.zh || "", done:!!e.done, opts:[], url:e.place || e.zh ? gm((e.zh || e.place) + " " + EN[d.city]) : ""}); });
+  return items.sort((a, b) => { const x = hm(a.t), y = hm(b.t); return (x < 0 ? 9999 : x) - (y < 0 ? 9999 : y); });
+}
+
+/* ---------- Render ---------- */
+let tab = "dia", cur = 0, photo = 0, open = new Set(), showHidden = false;
+const todayIdx = () => DAYS.findIndex(d => d.date === zoneNow("Asia/Shanghai").iso);
+function buildStrip(){
+  const t = todayIdx();
+  $("#strip").innerHTML = DAYS.map((d, i) => { const dt = dd(d.date);
+    return `<button class="dchip${i === t ? " today" : ""}${d.trains.length ? " move" : ""}" role="tab" data-i="${i}" aria-current="${i === cur}" aria-label="${WDL[dt.getDay()]}, ${dt.getDate()} de dezembro: ${esc(d.title)}">
+      <div class="w">${WD[dt.getDay()]}</div><div class="n">${fmtD(d.date)}</div><div class="c">${esc(d.cn)}</div></button>`; }).join("");
+  $("#strip").querySelectorAll(".dchip").forEach(b => b.onclick = () => go(+b.dataset.i));
+}
+function go(i){
+  cur = i; photo = 0; open.clear(); showHidden = false; ls.set("guia26.day", i);
+  if(tab !== "dia") setTab("dia");
+  $("#strip").querySelectorAll(".dchip").forEach(b => b.setAttribute("aria-current", +b.dataset.i === i));
+  $("#strip").querySelector(`[data-i="${i}"]`)?.scrollIntoView({inline:"center", block:"nearest", behavior:"smooth"});
+  render(); scrollTo({top:0});
+}
+function render(){
+  if(!S.me) return;
+  if(tab === "conta"){ renderAccount(); $("#fab").hidden = true; return; }
+  if(!DAYS.length){ $("#main").innerHTML = `<div class="card" style="margin-top:16px"><h3>Roteiro ainda não carregado</h3><p>${navigator.onLine ? "O roteiro ainda não está no banco do Supabase. Rodem o arquivo de carga do roteiro (veja o passo a passo do README)." : "Conectem à internet uma vez para baixar o roteiro; depois ele fica salvo no celular."}</p></div>`; $("#fab").hidden = true; return; }
+  if(tab === "dia") renderDay(); else if(tab === "hoteis") renderHotels(); else if(tab === "frases") renderPhrases(); else renderInfo();
+  $("#fab").hidden = tab !== "dia" || S.readonly;
+}
+const check = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+
+function renderDay(){
+  const d = DAYS[cur], dt = dd(d.date), cn = zoneNow("Asia/Shanghai"), isToday = cn.iso === d.date;
+  const all = dayItems(d), hiddenN = all.filter(x => x.hidden).length;
+  const items = all.filter(x => showHidden || !x.hidden);
+  // item atual: o último que já começou (só no dia de hoje, hora da China)
+  let curKey = null, next = null;
+  if(isToday){ const started = items.filter(x => !x.hidden && hm(x.t) >= 0 && hm(x.t) <= cn.min); curKey = started.length ? started[started.length - 1].key : null; next = items.find(x => !x.hidden && hm(x.t) > cn.min); }
+  const ph = d.photos[photo % Math.max(1, d.photos.length)];
+  const hero = d.photos.length
+    ? `<div class="hero" id="hero"><img src="img/${esc(ph.k)}.jpg" alt="${esc(ph.cap)}"><div class="shade"></div>
+        ${d.photos.length > 1 ? `<div class="dots">${d.photos.map((p, j) => `<i class="${j === photo % d.photos.length ? "on" : ""}"></i>`).join("")}</div>` : ""}
+        <div class="zhbig" aria-hidden="true">${esc(d.zh)}</div>
+        <div class="txt"><div class="meta">Dia ${cur + 1} de ${DAYS.length} · ${WDL[dt.getDay()]}, ${dt.getDate()} de dezembro</div><h1>${esc(d.title)}</h1>
+        <div class="meta">${esc(d.cn)} · ${esc(d.temp)}</div><div class="cap">${esc(ph.cap)} · foto: Wikimedia Commons</div></div></div>`
+    : `<div class="hero noimg"><div class="txt"><div class="meta">Dia ${cur + 1} de ${DAYS.length}</div><h1>${esc(d.title)}</h1></div></div>`;
+  const nowBox = isToday && next ? `<div class="now"><small>Agora na China · ${cn.hm}</small><b>Próximo: ${esc(next.t)} · ${esc(next.title)}</b></div>` : "";
+  const banner = !navigator.onLine ? `<div class="banner">Sem internet: mostrando a cópia salva neste celular. O que vocês mudarem agora é enviado ao grupo quando a conexão voltar.</div>` : "";
+
+  const row = it => {
+    const who = it.by && S.profiles[it.by], wn = who ? ` por ${esc((who.name || "").split(" ")[0] || "alguém")}` : "";
+    const mine = !it.base ? `<span class="by" style="--c:${esc(who?.color || "")}">adicionado${wn}</span>` : it.edited ? `<span class="by" style="--c:${esc(who?.color || "")}">ajustado${wn}</span>` : "";
+    const isOpen = open.has(it.key);
+    const sub = it.opts.length ? `Onde: ${it.opts.map(o => esc(o.name)).join(" · ")}` : it.rest ? `${esc(it.zh || "")}${it.place ? " · " + esc(it.place) : ""}` : (it.place ? esc(it.place) : "");
+    const showZh = it.zh || (it.rest && it.rest.zh);
+    return `<li class="it k-${it.type}${it.done ? " done" : ""}${it.hidden ? " hid" : ""}${it.key === curKey ? " cur" : ""}" data-k="${esc(it.key)}">
+      <div class="t">${esc(it.t || "—")}</div>
+      <div class="body" data-open="${esc(it.key)}" role="button" tabindex="0" aria-expanded="${isOpen}">
+        <div class="ttl"><span class="tag">${TYPES[it.type] || "Passeio"}</span>${esc(it.title)}${mine}</div>
+        ${sub && !isOpen ? `<div class="sub">${sub}</div>` : ""}
+        ${isOpen ? `
+          ${it.note ? `<div class="sub">${esc(it.note)}</div>` : ""}
+          ${it.place && !it.rest ? `<div class="sub">📍 ${esc(it.place)}</div>` : ""}
+          ${it.rest ? `<div class="sub">📍 ${esc(it.place)}${it.rest.price ? ` · ≈ ¥${esc(it.rest.price)} por pessoa` : ""}</div>` : ""}
+          ${it.opts.length ? `<div class="opts">${it.opts.map((o, j) => `<div class="opt"><b>${esc(o.name)}</b>${o.zh ? `<span class="zh">${esc(o.zh)}</span>` : ""}<p>${esc(o.desc)}</p><p>📍 ${esc(o.near)}${o.price ? ` · ≈ ¥${esc(o.price)} por pessoa` : ""}</p>
+             <div class="acts"><a class="pill" href="${esc(o.url)}" target="_blank" rel="noopener">Mapa</a>${o.zh ? `<button class="pill" data-show="${esc(o.zh)}" data-sub="${esc(o.name)}">Mostrar em chinês</button>` : ""}</div></div>`).join("")}</div>` : ""}
+          ${it.hidden ? `<div class="sub">Item oculto: não aparece no roteiro do dia.</div>` : ""}
+          <div class="acts">
+            ${it.url ? `<a class="pill" href="${esc(it.url)}" target="_blank" rel="noopener">Mapa</a>` : ""}
+            ${showZh ? `<button class="pill" data-show="${esc(showZh)}" data-sub="${esc(it.title)}">Mostrar em chinês</button>` : ""}
+            ${S.readonly ? "" : `<button class="pill" data-edit="${esc(it.key)}">Editar</button>`}
+            ${S.readonly ? "" : it.hidden ? `<button class="pill" data-unhide="${esc(it.key)}">Mostrar de novo</button>` : it.base ? `<button class="pill warn" data-hide="${esc(it.key)}">Ocultar</button>` : ""}
+          </div>` : ""}
+      </div>
+      <button class="chk" data-done="${esc(it.key)}" aria-pressed="${!!it.done}" aria-label="${it.done ? "Desmarcar como feito" : "Marcar como feito"}" ${S.readonly ? "disabled" : ""}>${check}</button></li>`;
+  };
+
+  const trains = d.trains.length ? `<h2 class="sec">Deslocamento</h2>${d.trains.map(o => `<div class="card">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">Trem ${esc(o.n)}</h3>
+      <span class="status ${o.bought ? "ok" : "todo"}">${o.bought ? "Comprado" : "A comprar"}</span></div>
+      <div class="trn"><span class="hh">${esc(o.d)}</span><span class="st">${esc(o.from)}</span><span class="du">${esc(o.dur)}</span>
+      <span class="hh">${esc(o.a)}</span><span class="st">${esc(o.to)}</span><span></span></div>
+      <p>${o.bought ? `Reservado no Trip.com. Emissão automática em ${esc(o.sale)}; confiram o e-mail.${o.note ? " " + esc(o.note[0].toUpperCase() + o.note.slice(1)) + "." : ""}` : `Venda abre em ${esc(o.sale)} (15 dias antes). Passaporte é o bilhete: cheguem 45–60 min antes.`}</p>
+      ${o.url ? `<div class="acts"><a class="pill" href="${esc(o.url)}" target="_blank" rel="noopener">Horários no Trip.com</a></div>` : ""}</div>`).join("")}` : "";
+  const moves = d.moves.length ? `<h2 class="sec">Trajetos · hotel ⇄ passeios</h2><div class="card">${d.moves.map(([a, b, km, how, t, c]) => `<div class="mv">
+      <b>${esc(a)}${b !== "—" ? " → " + esc(b) : ""}</b><span class="tm">${esc(t)}</span>
+      <span class="how">${esc(how)}${km !== "—" ? " · " + esc(km) : ""}</span><span class="co">${c !== "—" ? esc(c) : ""}</span></div>`).join("")}
+      <p style="font-size:12px">Tempos aproximados, sem trânsito pesado. Didi é por carro; metrô é por pessoa.</p></div>` : "";
+  const h = d.hotel;
+  const hotel = h ? `<h2 class="sec">Onde dormir</h2>${hotelCard(h)}` : "";
+  const alerts = d.a.length ? `<h2 class="sec">Atenção</h2>${d.a.map(x => `<div class="alert">${esc(x)}</div>`).join("")}` : "";
+  const extra = `<h2 class="sec">Mais sobre o dia</h2>
+    ${d.alt.length ? `<details class="card" open><summary>Outras ideias para hoje</summary>${d.alt.map(([n, t, url, p], j) => `<div class="idea" style="margin-top:10px"><b>${esc(n)}</b><p>${esc(t)}</p>${p ? `<p>${esc(p)}</p>` : ""}<div class="acts">${url ? `<a class="pill" href="${esc(url)}" target="_blank" rel="noopener">Mapa</a>` : ""}${S.readonly ? "" : `<button class="pill pri" data-idea="${j}">Adicionar ao dia</button>`}</div></div>`).join("")}</details>` : ""}
+    ${d.tips.length ? `<details class="card"><summary>Dicas</summary><ul class="tips" style="margin-top:10px">${d.tips.map(x => `<li>${esc(x)}</li>`).join("")}</ul></details>` : ""}
+    ${d.wx ? `<details class="card"><summary>Tempo em dezembro · ${esc(d.cn)}</summary><p>${esc(d.wx)}</p>${d.wxday ? `<p><b>${esc(d.wxday)}</b></p>` : ""}<p>Média histórica, não previsão. <a href="https://www.google.com/search?q=${encodeURIComponent("previsão do tempo " + EN[d.city])}" target="_blank" rel="noopener">Ver a previsão</a></p></details>` : ""}`;
+
+  $("#main").innerHTML = `${banner}${hero}
+    <div class="plan">${d.plan.map(p => `<span>${esc(p)}</span>`).join("")}</div>${nowBox}
+    <h2 class="sec">Programação <span class="cnt">· ${items.filter(x => !x.hidden).length} itens</span>${hiddenN ? `<button class="lnkbtn" id="tgHid">${showHidden ? "Esconder ocultos" : `Ver ocultos (${hiddenN})`}</button>` : ""}</h2>
+    <ol class="tl">${items.length ? items.map(row).join("") : `<li class="empty">Nada programado. Toque em + para adicionar.</li>`}</ol>
+    ${trains}${moves}${hotel}${alerts}${extra}`;
+
+  const hero_ = $("#hero"); if(hero_ && d.photos.length > 1) hero_.onclick = () => { photo = (photo + 1) % d.photos.length; renderDay(); };
+  $("#tgHid") && ($("#tgHid").onclick = () => { showHidden = !showHidden; renderDay(); });
+  wireCommon();
+  $("#main").querySelectorAll("[data-open]").forEach(el => { const f = e => { if(e.target.closest("a,button")) return; const k = el.dataset.open; open.has(k) ? open.delete(k) : open.add(k); renderDay(); };
+    el.onclick = f; el.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); f(e); } }; });
+  $("#main").querySelectorAll("[data-done]").forEach(b => b.onclick = () => { const k = b.dataset.done, it = all.find(x => x.key === k);
+    if(it.base) patchBase(k, {done:!it.done}); else saveEdit(k, {...S.edits[k], done:!it.done, at:Date.now()}); });
+  $("#main").querySelectorAll("[data-hide]").forEach(b => b.onclick = () => { patchBase(b.dataset.hide, {hidden:true}); open.delete(b.dataset.hide); toast("Item oculto. “Ver ocultos” traz de volta."); });
+  $("#main").querySelectorAll("[data-unhide]").forEach(b => b.onclick = () => patchBase(b.dataset.unhide, {hidden:false}));
+  $("#main").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => openForm(all.find(x => x.key === b.dataset.edit)));
+  $("#main").querySelectorAll("[data-idea]").forEach(b => b.onclick = () => { const [n, t] = d.alt[+b.dataset.idea]; openForm(null, {type:"passeio", title:n, note:t}); });
+}
+function hotelCard(h){
+  return `<div class="card"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">${esc(h.n)}</h3><span class="status ok">Reservado</span></div>
+    <p>${fmtD(h.from)} a ${fmtD(h.to)} · ${h.nights} ${h.nights > 1 ? "noites" : "noite"}</p><p>${esc(h.addr)}</p><p>${esc(h.near)}</p>
+    <div class="zhaddr">${esc(h.zh)}</div>
+    <div class="acts"><button class="pill pri" data-show="${esc(h.zh)}" data-sub="${esc(h.n)}" data-driver="1">Mostrar ao motorista</button><a class="pill" href="${esc(gm(h.q))}" target="_blank" rel="noopener">Mapa</a></div></div>`;
+}
+function wireCommon(){
+  document.querySelectorAll("[data-show]").forEach(b => b.onclick = e => { if(e.target.closest("[data-say]")) return; showBig(b.dataset.show, b.dataset.sub, b.dataset.driver ? "请带我们去这个地址，谢谢。" : "", b.dataset.py || ""); });
+  document.querySelectorAll("[data-say]").forEach(b => b.onclick = e => { e.stopPropagation(); say(b.dataset.say, b); });
+}
+
+/* ---------- Hotéis ---------- */
+function renderHotels(){
+  const seen = new Set(), hs = DAYS.map(d => d.hotel).filter(h => h && !seen.has(h.from) && seen.add(h.from));
+  $("#main").innerHTML = `<h2 class="sec">Hotéis reservados <span class="cnt">· ${hs.length} cidades</span></h2>
+    ${hs.map(h => { const d = DAYS.find(x => x.date === h.from); return `<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:0 0 6px 2px">${esc(EN[h.city] ? d.cn : "")}</div>${hotelCard(h)}</div>`; }).join("")}
+    <p style="font-size:12.5px;color:var(--muted)">“Mostrar ao motorista” abre o endereço em chinês em tela cheia, com a frase “por favor, leve-nos a este endereço”. Prefiram o endereço do app da reserva se for diferente.</p>`;
+  wireCommon();
+}
+
+/* ---------- Frases ---------- */
+const PHRASES = [
+  ["Básico", [["Olá","你好","nǐ hǎo"],["Obrigado","谢谢","xièxie"],["Desculpe / com licença","不好意思","bù hǎoyìsi"],["Não entendo","我听不懂","wǒ tīng bù dǒng"],["Pode me ajudar?","你能帮我吗？","nǐ néng bāng wǒ ma?"],["Sim / Não","是 / 不是","shì / bú shì"]]],
+  ["Transporte", [["Por favor, leve-nos a este endereço","请带我们去这个地址","qǐng dài wǒmen qù zhège dìzhǐ"],["Estação de trem","火车站","huǒchēzhàn"],["Metrô","地铁","dìtiě"],["Aeroporto","机场","jīchǎng"],["Pare aqui, por favor","请在这里停车","qǐng zài zhèlǐ tíngchē"],["Somos 3 pessoas","我们三个人","wǒmen sān ge rén"]]],
+  ["Comida", [["O cardápio, por favor","请给我菜单","qǐng gěi wǒ càidān"],["Pouco picante","微辣","wēi là"],["Sem pimenta","不要辣","bú yào là"],["Sou vegetariano","我吃素","wǒ chī sù"],["Água (quente)","水（热水）","shuǐ (rè shuǐ)"],["A conta, por favor","买单","mǎidān"],["Muito gostoso!","很好吃！","hěn hǎochī!"]]],
+  ["Compras", [["Quanto custa?","多少钱？","duōshao qián?"],["Muito caro","太贵了","tài guì le"],["Pode fazer mais barato?","可以便宜一点吗？","kěyǐ piányi yìdiǎn ma?"],["Posso pagar com Alipay?","可以用支付宝吗？","kěyǐ yòng Zhīfùbǎo ma?"]]],
+  ["Hotel e ajuda", [["Pode guardar nossas malas?","可以帮我们寄存行李吗？","kěyǐ bāng wǒmen jìcún xíngli ma?"],["Onde fica o banheiro?","洗手间在哪里？","xǐshǒujiān zài nǎlǐ?"],["Preciso de um médico","我需要看医生","wǒ xūyào kàn yīshēng"],["Perdi meu passaporte","我的护照丢了","wǒ de hùzhào diū le"]]]
+];
+// Pronúncia: voz chinesa do próprio celular (Web Speech); sem voz chinesa no aparelho, a voz do Claude (capability tts).
+const NATIVE = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+let ttsCap = null, TTS = NATIVE;
+(async () => { ttsCap = null; // fora do Claude não há voz extra: só a voz chinesa do celular
+  if(ttsCap && !TTS){ TTS = true; if(tab === "frases") renderPhrases(); } })();
+let zhVoice = null;
+function pickVoice(){ try{ const vs = speechSynthesis.getVoices(); zhVoice = vs.find(v => /^zh[-_]CN/i.test(v.lang)) || vs.find(v => /^zh/i.test(v.lang) && !/HK|TW/i.test(v.lang)) || vs.find(v => /^(zh|cmn)/i.test(v.lang)) || null; }catch(e){} }
+if(NATIVE){ pickVoice(); try{ speechSynthesis.onvoiceschanged = pickVoice; }catch(e){} }
+let speakingBtn = null;
+function say(zh, btn, slow){
+  if(!TTS) return;
+  if(NATIVE) pickVoice();
+  if(!zhVoice && ttsCap){
+    try{ NATIVE && speechSynthesis.cancel(); ttsCap.stop(); }catch(e){}
+    if(speakingBtn){ speakingBtn.classList.remove("on"); if(speakingBtn === btn){ speakingBtn = null; return; } }
+    speakingBtn = btn || null; btn && btn.classList.add("on");
+    const end = () => { btn && btn.classList.remove("on"); if(speakingBtn === btn) speakingBtn = null; };
+    ttsCap.speak(zh, {language:"zh", rate:slow ? 0.7 : 0.9}).then(end, e => { end(); if(e && e.code !== "viewer_stopped" && e.code !== "busy") toast(e && e.code === "not_granted" ? "A voz está desligada neste guia." : "Não foi possível tocar o áudio agora."); });
+    return;
+  }
+  if(!NATIVE) return;
+  try{
+    speechSynthesis.cancel();
+    if(speakingBtn){ speakingBtn.classList.remove("on"); if(speakingBtn === btn){ speakingBtn = null; return; } }
+    const u = new SpeechSynthesisUtterance(zh);
+    u.lang = zhVoice ? zhVoice.lang : "zh-CN"; if(zhVoice) u.voice = zhVoice; u.rate = slow ? 0.55 : 0.8;
+    speakingBtn = btn || null; btn && btn.classList.add("on");
+    const end = () => { btn && btn.classList.remove("on"); if(speakingBtn === btn) speakingBtn = null; };
+    u.onend = end; u.onerror = () => { end(); toast("Este celular não tem voz em chinês instalada. No iPhone: Ajustes › Acessibilidade › Conteúdo falado › Vozes › Chinês."); };
+    speechSynthesis.speak(u);
+  }catch(e){ toast("Não foi possível tocar o áudio neste aparelho."); }
+}
+const spk = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18.2 6.5a7.5 7.5 0 0 1 0 11"/></svg>`;
+function renderPhrases(){
+  $("#main").innerHTML = PHRASES.map(([g, list]) => `<h2 class="sec">${esc(g)}</h2><div class="card">${list.map(([p, z, y]) => `<div class="phr${TTS ? " tts" : ""}" role="button" tabindex="0" data-show="${esc(z)}" data-sub="${esc(p)}" data-py="${esc(y)}"><span class="p">${esc(p)}</span><span class="z">${esc(z)}</span><span class="y">${esc(y)}</span>${TTS ? `<button class="say" data-say="${esc(z)}" aria-label="Ouvir: ${esc(p)}">${spk}</button>` : ""}</div>`).join("")}</div>`).join("")
+    + `<p style="font-size:12.5px;color:var(--muted);margin-top:14px">Toque numa frase para mostrá-la grande na tela${TTS ? "; toque no alto-falante para ouvir a pronúncia (usa a voz em chinês do celular)" : ""}.</p>`;
+  wireCommon();
+}
+
+/* ---------- Info ---------- */
+function renderInfo(){
+  const K = [
+    ["Voos", "Ida: São Paulo 07/12 às 23:10 → Xangai (PVG) 09/12 às 12:40. Volta: Pequim (PEK) 30/12 às 15:00 → São Paulo 31/12 às 05:25. Cheguem 3h antes."],
+    ["Bagagem", TRIP.bag],
+    ["Pagamentos", "Alipay e WeChat Pay com cartão internacional resolvem quase tudo, até Didi e metrô. Levem algum yuan em espécie para emergências."],
+    ["Internet", "Google, WhatsApp e Instagram são bloqueados na China; o eSIM com roaming internacional funciona sem VPN."],
+    ["Apps", "Trip.com (trens e hotéis), Amap ou Apple Maps, Didi (pelo Alipay), um tradutor com câmera e os apps oficiais da Disney e da Universal."],
+    ["Passaporte", "É o bilhete de trem e o ingresso das atrações. Andem sempre com ele."],
+    ["Frio", "Pequim e Xi'an ficam abaixo de zero à noite; Zhangjiajie tem neblina e pode ter gelo. Camadas, luvas e gorro."],
+    ["Tomadas e fuso", "220V, tipos A, C e I. A China está 11 horas à frente de Brasília."]
+  ];
+  $("#main").innerHTML = `<h2 class="sec">Emergência na China</h2>
+    <div class="card" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center">
+      <div><div class="num">110</div><p>Polícia</p></div><div><div class="num">120</div><p>Ambulância</p></div><div><div class="num">119</div><p>Bombeiros</p></div></div>
+    <h2 class="sec">Antes de sair do hotel</h2>
+    <div class="know">${K.map(([h, p]) => `<div class="card"><h3>${esc(h)}</h3><p>${esc(p)}</p></div>`).join("")}</div>
+    <h2 class="sec">Como o guia funciona</h2>
+    <div class="card"><p>Tudo o que vocês adicionam, ajustam, ocultam ou marcam como feito aparece para os três em segundos. Sem internet, o guia abre pela cópia salva no celular e envia as mudanças quando a conexão voltar. A hora no topo é a da China.</p>
+    <p>Para desfazer uma edição de um item do roteiro original, abra o item, toque em Editar e em “Voltar ao original”.</p></div>`;
+}
+
+/* ---------- Formulário ---------- */
+function openForm(it, preset){
+  const d = DAYS[cur], isNew = !it, base = it && it.base;
+  const v = isNew ? {type:"passeio", t:"", title:"", note:"", place:"", zh:"", day:d.id, ...(preset || {})} : {...it, day:d.id};
+  const types = ["passeio","comida","compras","transporte","nota"];
+  $("#layer").innerHTML = `<div class="scrim" id="scrim"><form class="sheet" id="form" role="dialog" aria-modal="true" aria-labelledby="fTitle">
+    <div class="shead"><h3 id="fTitle">${isNew ? "Adicionar ao dia" : "Editar item"}</h3><button type="button" class="x" id="fX" aria-label="Fechar">×</button></div>
+    <div class="sbody">
+    ${base ? "" : `<div class="fld"><span class="lb">Tipo</span><div class="seg" id="fType">${types.map(t => `<button type="button" data-t="${t}" aria-pressed="${v.type === t}">${TYPES[t]}</button>`).join("")}</div></div>`}
+    <div class="row2">
+      <div class="fld"><label for="fT">Horário</label><input id="fT" type="time" value="${esc(hm(v.t) >= 0 ? String(Math.floor(hm(v.t)/60)).padStart(2,"0") + ":" + String(hm(v.t)%60).padStart(2,"0") : "")}"></div>
+      <div class="fld"><label for="fDay">Dia</label><select id="fDay" ${base ? "disabled" : ""}>${DAYS.map((x, i) => `<option value="${x.id}" ${x.id === (it && !base ? S.edits[it.key].day : d.id) ? "selected" : ""}>${fmtD(x.date)} · ${esc(x.cn)}</option>`).join("")}</select></div>
+    </div>
+    <div class="fld"><label for="fTitle2">O quê</label><input id="fTitle2" required maxlength="140" value="${esc(v.title)}" placeholder="Ex.: Jantar no Din Tai Fung"></div>
+    <div class="fld"><label for="fNote">Detalhes</label><textarea id="fNote" maxlength="600" placeholder="Reserva, preço, o que pedir, quem vai…">${esc(v.note || "")}</textarea></div>
+    ${base ? "" : `<details class="more"${v.place || v.zh ? " open" : ""}><summary>+ Local no mapa e nome em chinês</summary>
+    <div class="fld"><label for="fPlace">Local ou endereço (abre no mapa)</label><input id="fPlace" maxlength="200" value="${esc(v.place || "")}" placeholder="Ex.: Xintiandi"></div>
+    <div class="fld"><label for="fZh">Nome em chinês (para mostrar)</label><input id="fZh" maxlength="120" value="${esc(v.zh || "")}" placeholder="Ex.: 鼎泰丰"></div></details>`}
+    </div>
+    <div class="sfoot">
+      <button type="submit" class="pill pri">Salvar</button>
+      <button type="button" class="pill" id="fCancel">Cancelar</button>
+      ${base && it.edited ? `<button type="button" class="pill" id="fReset">Voltar ao original</button>` : ""}
+      ${!isNew && !base ? `<button type="button" class="pill warn" id="fDel">Excluir</button>` : ""}
+    </div></form></div>`;
+  // com o teclado aberto, a folha encolhe para caber na área visível (o rodapé com Salvar fica sempre à vista)
+  const vv = window.visualViewport, scrim = $("#scrim");
+  const fit = () => { if(!vv || !scrim.isConnected) return; scrim.style.top = vv.offsetTop + "px"; scrim.style.height = vv.height + "px"; scrim.style.bottom = "auto"; };
+  if(vv){ fit(); vv.addEventListener("resize", fit); vv.addEventListener("scroll", fit); }
+  document.body.style.overflow = "hidden";
+  let type = v.type;
+  const close = () => { if(vv){ vv.removeEventListener("resize", fit); vv.removeEventListener("scroll", fit); } document.body.style.overflow = ""; $("#layer").innerHTML = ""; };
+  $("#scrim").onclick = e => { if(e.target.id === "scrim") close(); };
+  $("#fCancel").onclick = close; $("#fX").onclick = close;
+  $("#fType")?.querySelectorAll("button").forEach(b => b.onclick = () => { type = b.dataset.t; $("#fType").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); });
+  $("#fReset") && ($("#fReset").onclick = () => { const e = {...S.edits[it.key]}; delete e.t; delete e.title; delete e.note; saveEdit(it.key, Object.keys(e).filter(k => k !== "at").length ? {...e, at:Date.now()} : null); close(); toast("Item voltou ao original."); });
+  let armed = false;
+  $("#fDel") && ($("#fDel").onclick = () => { if(!armed){ armed = true; $("#fDel").textContent = "Toque de novo para excluir"; return; } saveEdit(it.key, null); close(); toast("Item excluído."); });
+  $("#form").onsubmit = e => {
+    e.preventDefault();
+    const title = $("#fTitle2").value.trim(); if(!title){ $("#fTitle2").focus(); return; }
+    const t = $("#fT").value, note = $("#fNote").value.trim();
+    if(base){
+      saveEdit(it.key, {...(S.edits[it.key] || {}), t, title, note, at:Date.now()});
+    } else {
+      const id = isNew ? "n-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) : it.key;
+      const day = $("#fDay").value;
+      saveEdit(id, {kind:"new", day, type, t, title, note, place:$("#fPlace").value.trim(), zh:$("#fZh").value.trim(), done:isNew ? false : !!it.done, at:Date.now()});
+      if(day !== d.id) toast(`Salvo em ${fmtD(DAYS.find(x => x.id === day).date)}.`);
+    }
+    close(); if(isNew) toast("Adicionado ao roteiro.");
+  };
+  // foco no campo só no computador: no celular o teclado abriria por cima da folha logo de cara
+  if(matchMedia("(hover: hover) and (pointer: fine)").matches) setTimeout(() => $("#fTitle2").focus(), 50);
+  $("#form").addEventListener("focusin", e => { if(e.target.matches("input,textarea,select")) setTimeout(() => e.target.scrollIntoView({block:"nearest"}), 250); });
+}
+
+/* ---------- Tela cheia para mostrar a alguém ---------- */
+function showBig(zh, pt, line, py){
+  $("#layer").innerHTML = `<div class="show" role="dialog" aria-modal="true" aria-label="Texto em chinês">
+    <div class="big">${esc(zh)}</div>${line ? `<div class="mid">${esc(line)}</div>` : ""}${py ? `<div class="py">${esc(py)}</div>` : ""}<div class="pt">${esc(pt || "")}</div>
+    <div class="showacts">${TTS ? `<button id="showSay">${spk}Ouvir</button><button id="showSlow">Devagar</button>` : ""}<button id="showClose">Fechar</button></div></div>`;
+  const full = line ? zh + "。" + line : zh;
+  $("#showSay") && ($("#showSay").onclick = e => say(full, e.currentTarget));
+  $("#showSlow") && ($("#showSlow").onclick = e => say(full, e.currentTarget, true));
+  $("#showClose").onclick = () => { try{ NATIVE && speechSynthesis.cancel(); ttsCap && ttsCap.stop(); }catch(e){} $("#layer").innerHTML = ""; };
+  $("#showClose").focus();
+}
+let toastT;
+function toast(msg){ clearTimeout(toastT); let el = $("#toast"); if(!el){ el = document.createElement("div"); el.id = "toast"; el.className = "toast"; el.setAttribute("role", "status"); document.body.appendChild(el); } el.textContent = msg; el.hidden = false; toastT = setTimeout(() => el.hidden = true, 2600); }
+
+function setTab(t){
+  tab = t; document.querySelectorAll(".tabs [data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+  $("#strip").hidden = t !== "dia"; render(); scrollTo({top:0});
+}
+document.querySelectorAll(".tabs [data-tab]").forEach(b => b.onclick = () => setTab(b.dataset.tab));
+$("#fab").onclick = () => openForm(null);
+document.addEventListener("keydown", e => { if(e.key === "Escape"){ document.body.style.overflow = ""; $("#layer").innerHTML = ""; } });
+
+// dia inicial: hoje (se a viagem já começou), senão o último dia aberto neste aparelho
+/* ---------- Conta e notificações ---------- */
+const COLORS = ["#B3362A","#2C7660","#2B618A","#7A4A7E","#9A6C12","#3C4A52"];
+const DEF_PREFS = {remind:30, morning:true, trains:true, changes:true, quiet:true, quietFrom:"23:00", quietTo:"07:00"};
+const prefs = () => ({...DEF_PREFS, ...(S.profile?.settings || {})});
+const initials = n => (n || "?").trim().split(/\s+/).slice(0, 2).map(x => x[0]).join("").toUpperCase();
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const pushOK = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+let installEvt = null; addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if(tab === "conta") renderAccount(); });
+const b64u = s => { const p = "=".repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+async function currentSub(){ if(!pushOK) return null; try{ const r = await navigator.serviceWorker.getRegistration(); return r ? await r.pushManager.getSubscription() : null; }catch(e){ return null; } }
+async function enablePush(){
+  if(!pushOK){ toast(isIOS && !standalone ? "No iPhone, primeiro adicionem o guia à Tela de Início." : "Este navegador não recebe notificações."); return; }
+  if(!CFG.VAPID_PUBLIC_KEY){ toast("Falta a chave de notificações no config.js."); return; }
+  const perm = await Notification.requestPermission();
+  if(perm !== "granted"){ toast("Notificações bloqueadas. Liberem nas configurações do navegador para este site."); renderAccount(); return; }
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64u(CFG.VAPID_PUBLIC_KEY)});
+    const j = sub.toJSON();
+    const {error} = await sb.from("push_subs").upsert({endpoint:j.endpoint, user_id:S.me.id, sub:j, device:navigator.userAgent.slice(0, 160)});
+    if(error) throw error;
+    toast("Notificações ativadas neste aparelho.");
+  }catch(e){ toast("Não deu para ativar: " + (e.message || "erro desconhecido")); }
+  renderAccount();
+}
+async function disablePush(){
+  const sub = await currentSub();
+  if(sub){ await sb.from("push_subs").delete().eq("endpoint", sub.endpoint); await sub.unsubscribe(); }
+  toast("Notificações desligadas neste aparelho."); renderAccount();
+}
+async function testPush(){
+  const {error} = await sb.functions.invoke("push", {body:{action:"test"}});
+  toast(error ? "O envio de teste falhou. Confiram se a função “push” foi publicada no Supabase." : "Teste enviado. Deve chegar em alguns segundos.");
+}
+let prefT;
+function savePrefs(patch){
+  S.profile = {...(S.profile || {}), settings:{...prefs(), ...patch}};
+  clearTimeout(prefT); prefT = setTimeout(async () => { const {error} = await sb.from("profiles").update({settings:S.profile.settings}).eq("id", S.me.id); if(error) toast("Não salvou as preferências."); }, 500);
+}
+async function renderAccount(){
+  const p = S.profile || {}, pr = prefs(), sub = await currentSub();
+  const perm = "Notification" in window ? Notification.permission : "unsupported";
+  const status = !pushOK ? (isIOS && !standalone ? "No iPhone, as notificações só funcionam com o guia na Tela de Início (Safari › Compartilhar › Adicionar à Tela de Início). Depois abram pelo ícone e voltem aqui." : "Este navegador não recebe notificações.")
+    : perm === "denied" ? "Bloqueadas neste aparelho. Liberem nas configurações do navegador (notificações deste site) e voltem aqui."
+    : sub ? "Ativadas neste aparelho." : "Desligadas neste aparelho.";
+  const sel = (id, v, opts) => `<select id="${id}">${opts.map(([k, l]) => `<option value="${k}" ${String(v) === String(k) ? "selected" : ""}>${l}</option>`).join("")}</select>`;
+  $("#main").innerHTML = `
+    <h2 class="sec">Perfil</h2>
+    <div class="card">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px"><div class="avatar" id="av" style="--c:${esc(p.color || COLORS[1])}">${esc(initials(p.name))}</div>
+        <div style="min-width:0"><b>${esc(p.name || "Sem nome")}</b><p style="margin:0;word-break:break-all">${esc(S.me.email)}</p></div></div>
+      <div class="fld"><label for="pName">Nome que aparece para o grupo</label><input id="pName" maxlength="40" value="${esc(p.name || "")}"></div>
+      <div class="fld"><span class="lb">Cor</span><div class="swatches">${COLORS.map(c => `<button type="button" style="--c:${c}" data-c="${c}" aria-pressed="${(p.color || COLORS[1]) === c}" aria-label="Cor ${c}"></button>`).join("")}</div></div>
+      <div class="acts"><button class="pill pri" id="pSave">Salvar perfil</button></div>
+    </div>
+    <h2 class="sec">Notificações</h2>
+    <div class="card">
+      <p style="margin-top:0">${esc(status)}</p>
+      <div class="acts" style="margin-bottom:6px">
+        ${pushOK && perm !== "denied" ? (sub ? `<button class="pill" id="nOff">Desligar neste aparelho</button><button class="pill pri" id="nTest">Enviar teste</button>` : `<button class="pill pri" id="nOn">Ativar neste aparelho</button>`) : ""}
+        ${installEvt ? `<button class="pill" id="inst">Instalar o app</button>` : ""}
+      </div>
+      <label class="switch"><span>Lembrete antes de cada item<small>Do roteiro do dia, no horário da China</small></span>${sel("pRemind", pr.remind, [[0,"Desligado"],[15,"15 min"],[30,"30 min"],[60,"1 hora"]])}</label>
+      <label class="switch"><span>Resumo do dia às 7h<small>O que tem hoje e a cidade</small></span><input type="checkbox" id="pMorning" ${pr.morning ? "checked" : ""}></label>
+      <label class="switch"><span>Trens<small>2h antes da partida e no dia em que a venda abre</small></span><input type="checkbox" id="pTrains" ${pr.trains ? "checked" : ""}></label>
+      <label class="switch"><span>Ajustes e novas programações<small>Quando alguém do grupo adiciona, muda ou oculta algo</small></span><input type="checkbox" id="pChanges" ${pr.changes ? "checked" : ""}></label>
+      <label class="switch"><span>Silêncio à noite<small>Nada entre ${esc(pr.quietFrom)} e ${esc(pr.quietTo)} (horário da China)</small></span><input type="checkbox" id="pQuiet" ${pr.quiet ? "checked" : ""}></label>
+    </div>
+    <h2 class="sec">Segurança</h2>
+    <div class="card">
+      <div class="fld"><label for="pPass">Nova senha</label><input id="pPass" type="password" minlength="6" autocomplete="new-password"></div>
+      <div class="acts"><button class="pill" id="pPassBtn">Trocar senha</button><button class="pill warn" id="out">Sair da conta</button></div>
+    </div>`;
+  let color = p.color || COLORS[1];
+  document.querySelectorAll(".swatches button").forEach(b => b.onclick = () => { color = b.dataset.c; document.querySelectorAll(".swatches button").forEach(x => x.setAttribute("aria-pressed", x === b)); $("#av").style.setProperty("--c", color); });
+  $("#pSave").onclick = async () => {
+    const name = $("#pName").value.trim(); if(!name){ toast("Escrevam um nome."); return; }
+    const {error} = await sb.from("profiles").update({name, color}).eq("id", S.me.id);
+    if(error){ toast("Não salvou o perfil."); return; }
+    S.profile = {...S.profile, name, color}; S.profiles[S.me.id] = {name, color}; toast("Perfil salvo."); renderAccount();
+  };
+  $("#nOn") && ($("#nOn").onclick = enablePush); $("#nOff") && ($("#nOff").onclick = disablePush); $("#nTest") && ($("#nTest").onclick = testPush);
+  $("#inst") && ($("#inst").onclick = async () => { installEvt.prompt(); await installEvt.userChoice; installEvt = null; renderAccount(); });
+  $("#pRemind").onchange = e => savePrefs({remind:+e.target.value});
+  [["pMorning","morning"],["pTrains","trains"],["pChanges","changes"],["pQuiet","quiet"]].forEach(([id, k]) => $("#" + id).onchange = e => savePrefs({[k]:e.target.checked}));
+  $("#pPassBtn").onclick = async () => { const v = $("#pPass").value; if(v.length < 6){ toast("A senha precisa ter pelo menos 6 caracteres."); return; }
+    const {error} = await sb.auth.updateUser({password:v}); toast(error ? "Não deu para trocar a senha: " + error.message : "Senha trocada."); $("#pPass").value = ""; };
+  $("#out").onclick = async () => { await sb.auth.signOut(); ["guia26.server","guia26.pending","guia26.trip","guia26.profiles"].forEach(k => { try{ localStorage.removeItem(k); }catch(e){} }); location.reload(); };
+}
+
+/* ---------- Login ---------- */
+let authMode = "in";
+function showAuth(msg){
+  $("#auth").hidden = false; $("#app").hidden = true; $("#tabs").hidden = true; $("#fab").hidden = true;
+  if(msg) $("#aErr").textContent = msg;
+}
+document.querySelectorAll("#authMode button").forEach(b => b.onclick = () => {
+  authMode = b.dataset.m; document.querySelectorAll("#authMode button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  $("#nameFld").hidden = authMode !== "up"; $("#aBtn").textContent = authMode === "up" ? "Criar conta" : "Entrar";
+  $("#aPass").autocomplete = authMode === "up" ? "new-password" : "current-password"; $("#aErr").textContent = "";
+});
+$("#authForm").onsubmit = async e => {
+  e.preventDefault(); if(!sb) return;
+  const email = $("#aEmail").value.trim().toLowerCase(), password = $("#aPass").value, name = $("#aName").value.trim();
+  if(authMode === "up" && !name){ $("#aErr").textContent = "Escrevam o seu nome."; return; }
+  $("#aBtn").disabled = true; $("#aErr").textContent = "";
+  try{
+    const r = authMode === "up" ? await sb.auth.signUp({email, password, options:{data:{name}}}) : await sb.auth.signInWithPassword({email, password});
+    if(r.error){
+      const m = r.error.message || "";
+      $("#aErr").textContent = /Database error|not allowed|viajantes/i.test(m) ? "Este e-mail não está na lista de viajantes. Peçam para incluí-lo no Supabase."
+        : /Invalid login/i.test(m) ? "E-mail ou senha incorretos." : /already registered/i.test(m) ? "Este e-mail já tem conta. Use “Entrar”." : m;
+    } else if(!r.data.session){ $("#aErr").textContent = "Conta criada. Confirmem pelo link enviado ao e-mail e depois entrem."; }
+    else startApp(r.data.session.user);
+  } finally { $("#aBtn").disabled = false; }
+};
+
+/* ---------- Início ---------- */
+async function startApp(user){
+  S.me = user;
+  $("#auth").hidden = true; $("#app").hidden = false; $("#tabs").hidden = false;
+  const cached = ls.get("guia26.trip", null); if(cached) setTrip(cached);
+  recompute(); syncLabel();
+  const q = new URLSearchParams(location.search).get("day");
+  const pick = () => { const qi = q ? DAYS.findIndex(d => d.id === q) : -1, t = todayIdx(), saved = ls.get("guia26.day", 0);
+    cur = qi >= 0 ? qi : t >= 0 ? t : Math.min(Math.max(0, saved | 0), Math.max(0, DAYS.length - 1)); };
+  pick(); if(DAYS.length) buildStrip(); render();
+  if(navigator.onLine){ await refreshAll(); if(!cached){ pick(); buildStrip(); render(); } }
+  if(!S.profile && S.profiles[S.me.id]) S.profile = S.profiles[S.me.id];
+  subscribe();
+  setTimeout(() => $("#strip").querySelector(`[data-i="${cur}"]`)?.scrollIntoView({inline:"center", block:"nearest"}), 0);
+  if(q) history.replaceState(null, "", location.pathname);
+}
+async function boot(){
+  tick(); setInterval(() => { tick(); if(S.me && tab === "dia" && DAYS.length && !$("#layer").innerHTML && DAYS[cur].date === zoneNow("Asia/Shanghai").iso) renderDay(); }, 60000);
+  if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  if(!sb){ showAuth("O app ainda não foi ligado ao Supabase: preencham o config.js (veja o README)."); $("#aBtn").disabled = true; return; }
+  sb.auth.onAuthStateChange((ev, s) => { if(ev === "SIGNED_OUT") showAuth(); });
+  const {data} = await sb.auth.getSession();
+  if(data.session) startApp(data.session.user); else showAuth();
+}
+boot();
+</script>
+</body>
+</html>
