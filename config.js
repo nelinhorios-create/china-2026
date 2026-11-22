@@ -3,7 +3,7 @@
 // e a chave VAPID pública só serve para o navegador assinar as notificações.
 // NUNCA coloque aqui a chave "service_role" nem a VAPID privada.
 window.APP_CONFIG = {
-  SUPABASE_URL: "COLE_AQUI_A_PROJECT_URL",        // ex.: https://abcdefgh.supabase.co
+  SUPABASE_URL: "https://uashjywpybbeifbujsko.supabase.co",
   SUPABASE_ANON_KEY: "COLE_AQUI_A_CHAVE_ANON",    // Project Settings › API › anon public
   VAPID_PUBLIC_KEY: "BPqfc7Y9TOwr4qNRLo_AZKdmpUxSITCxNfrh9GLHxkGu0BjtE8cktzqY4SKl2vWb-Dnu14Z6OkShJ9qcbsDL5iY"
 };
