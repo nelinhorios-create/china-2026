@@ -136,3 +136,14 @@ end $$;
 drop trigger if exists edits_notify on public.edits;
 create trigger edits_notify after insert or update or delete on public.edits
   for each row execute function public.queue_edit_change();
+
+-- 6) Permissões de tabela para quem está logado (projetos novos do Supabase não liberam sozinhos).
+--    As regras acima (RLS) continuam decidindo o que cada um vê e muda.
+grant usage on schema public to anon, authenticated;
+grant select on public.trip to authenticated;
+grant select, update on public.profiles to authenticated;
+grant select, insert, update, delete on public.edits to authenticated;
+grant select, insert, update, delete on public.push_subs to authenticated;
+grant execute on function public.is_traveler() to authenticated;
+grant all on public.trip, public.profiles, public.edits, public.push_subs, public.notify_queue, public.notif_log, public.app_secrets to service_role;
+grant usage, select on all sequences in schema public to service_role;
