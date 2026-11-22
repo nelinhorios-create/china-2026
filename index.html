@@ -229,7 +229,37 @@ body{margin:0}
 .switch input[type=checkbox]:checked{background:var(--jade)} .switch input[type=checkbox]:checked::after{transform:translateX(18px)}
 .switch select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 8px;font-size:14px}
 .by{font-size:10.5px;font-weight:700;margin-left:4px;color:var(--c,var(--gold))}
-.tabs nav{grid-template-columns:repeat(5,1fr)!important}
+.tabs nav{grid-template-columns:repeat(6,1fr)!important}
+.tabs button{font-size:10.5px!important;padding-inline:0!important}
+
+/* fotos */
+.fchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-block:2px 10px}
+.fchips::-webkit-scrollbar{display:none}
+.fchips button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 11px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.fchips button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.fchips small{font-weight:500;opacity:.7;margin-left:3px}
+.phgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;border-radius:12px;overflow:hidden}
+.ph{aspect-ratio:1;border:0;padding:0;background:var(--sunk);cursor:pointer;position:relative;max-width:100%}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .who{position:absolute;left:4px;bottom:4px;width:18px;height:18px;border-radius:50%;background:var(--c);color:#fff;font:700 9px/18px var(--f-body);text-align:center;box-shadow:0 0 0 1.5px rgba(255,255,255,.8)}
+.phup{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.phup label.pill{cursor:pointer}
+.phday{font:700 12px/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:16px 0 7px}
+.pv{position:fixed;inset:0;z-index:60;background:#050505;color:#fff;display:flex;flex-direction:column}
+.pvtop{display:flex;justify-content:space-between;align-items:center;padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:6px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font-size:13px;opacity:.85}
+.pvtop button{width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:22px;cursor:pointer}
+.pvimg{flex:1;min-height:0;display:grid;place-items:center;touch-action:pan-y}
+.pvimg img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.pvbar{padding-top:10px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.pvbar p{margin:0 0 4px;font-size:14px}
+.pvbar .meta{font-size:12.5px;opacity:.7}
+.pvbar .pill{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.25)}
+.pvbar .pill.pri{background:#fff;color:#111;border-color:#fff}
+.pvbar .pill.warn{color:#FF9A8B}
+.pvbar input{width:100%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:9px 11px;font-size:16px;margin:6px 0}
+.pvnav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:56px;border:0;background:rgba(255,255,255,.1);color:#fff;font-size:28px;cursor:pointer;border-radius:10px}
+.pvnav.l{left:max(8px,env(safe-area-inset-left,0px))} .pvnav.r{right:max(8px,env(safe-area-inset-right,0px))}
+@media (hover:none){.pvnav{display:none}}
 
 /* abertura: os três viajantes atravessam a tela */
 #intro{position:fixed;inset:0;z-index:80;background:#F7C98E;overflow:hidden;transition:opacity .45s ease}
@@ -251,6 +281,11 @@ body{margin:0}
 #intro .petal{animation:fall linear infinite}
 #intro .spark{transform-box:fill-box;transform-origin:center;animation:burst 1.4s ease-out infinite}
 @keyframes walk{from{transform:translateX(-250px)}to{transform:translateX(400px)}}
+#intro .panda{animation:chase 4.6s linear forwards}
+#intro .pbob{animation:bob .17s ease-in-out infinite alternate}
+#intro .pleg{transform-box:fill-box;transform-origin:50% 8%;animation:swing .3s ease-in-out infinite alternate}
+#intro .pleg.b{animation-delay:-.3s}
+@keyframes chase{from{transform:translateX(-380px)}to{transform:translateX(250px)}}
 @keyframes bob{to{transform:translateY(-4px)}}
 @keyframes swing{from{transform:rotate(-20deg)}to{transform:rotate(20deg)}}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -262,7 +297,7 @@ body{margin:0}
 @keyframes stamp{from{transform:scale(2.6) rotate(18deg);opacity:0}to{transform:scale(1) rotate(-8deg);opacity:1}}
 @keyframes fall{from{transform:translate(0,-40px) rotate(0)}to{transform:translate(-40px,760px) rotate(540deg)}}
 @keyframes burst{0%{transform:scale(.2);opacity:0}30%{opacity:1}100%{transform:scale(1.4);opacity:0}}
-@media (prefers-reduced-motion:reduce){#intro *{animation:none!important}#intro .walker{transform:translateX(70px)}}
+@media (prefers-reduced-motion:reduce){#intro *{animation:none!important}#intro .walker{transform:translateX(70px)}#intro .panda{transform:translateX(-30px)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -304,6 +339,7 @@ body{margin:0}
 <button class="fab" id="fab" hidden aria-label="Adicionar ao dia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
 <div class="tabs" id="tabs" hidden><nav role="tablist" aria-label="Seções">
   <button role="tab" data-tab="dia" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Roteiro</button>
+  <button role="tab" data-tab="fotos" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.6"/></svg>Fotos</button>
   <button role="tab" data-tab="hoteis" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V8l9-4 9 4v12"/><path d="M8 20v-5h8v5M8 10.5h.01M12 10.5h.01M16 10.5h.01"/></svg>Hotéis</button>
   <button role="tab" data-tab="frases" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>Frases</button>
   <button role="tab" data-tab="info" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8h.01"/></svg>Info</button>
@@ -467,6 +503,7 @@ function go(i){
 function render(){
   if(!S.me) return;
   if(tab === "conta"){ renderAccount(); $("#fab").hidden = true; return; }
+  if(tab === "fotos"){ renderPhotos(); $("#fab").hidden = true; return; }
   if(!DAYS.length){ $("#main").innerHTML = `<div class="card" style="margin-top:16px"><h3>Roteiro ainda não carregado</h3><p>${navigator.onLine ? "O roteiro ainda não está no banco do Supabase. Rodem o arquivo de carga do roteiro (veja o passo a passo do README)." : "Conectem à internet uma vez para baixar o roteiro; depois ele fica salvo no celular."}</p></div>`; $("#fab").hidden = true; return; }
   if(tab === "dia") renderDay(); else if(tab === "hoteis") renderHotels(); else if(tab === "frases") renderPhrases(); else renderInfo();
   $("#fab").hidden = tab !== "dia" || S.readonly;
@@ -851,6 +888,157 @@ $("#authForm").onsubmit = async e => {
   } finally { $("#aBtn").disabled = false; }
 };
 
+/* ---------- Fotos da viagem ---------- */
+// Tabela "photos" + bucket privado "fotos" no Supabase. Cada foto sobe em duas versões: até 2048 px e miniatura de 480 px.
+const PH = {list:null, urls:{}, full:{}, day:"all", busy:0, sub:null, vlist:[], view:-1};
+const dayById = id => DAYS.find(d => d.id === id);
+async function signUrls(paths){
+  const now = Date.now(), need = [...new Set(paths)].filter(p => p && (!PH.urls[p] || PH.urls[p].exp < now + 120e3));
+  for(let i = 0; i < need.length; i += 100){
+    const {data} = await sb.storage.from("fotos").createSignedUrls(need.slice(i, i + 100), 6 * 3600);
+    (data || []).forEach(d => { if(d.signedUrl) PH.urls[d.path] = {u:d.signedUrl, exp:now + 6 * 3600e3}; });
+  }
+}
+const purl = p => (PH.urls[p] || {}).u || "";
+async function loadPhotos(){
+  const {data, error} = await sb.from("photos").select("id, path, thumb, day, caption, author, created_at, w, h").order("created_at", {ascending:false});
+  if(error){ PH.list = PH.list || []; toast("Não deu para carregar as fotos agora."); }
+  else { PH.list = data; await signUrls(data.map(p => p.thumb)); }
+  if(tab === "fotos" && PH.view < 0) renderPhotos();
+}
+function photosSubscribe(){
+  if(PH.sub) return;
+  PH.sub = sb.channel("photos-live").on("postgres_changes", {event:"*", schema:"public", table:"photos"}, () => loadPhotos()).subscribe();
+}
+// dia de destino de uma foto nova: o dia escolhido no filtro; sem filtro, o dia de hoje da viagem
+const uploadDay = () => PH.day !== "all" && PH.day !== "_" ? PH.day : (DAYS[todayIdx()] || {}).id || null;
+async function shrink(file, max, q){
+  let src;
+  try{ src = await createImageBitmap(file, {imageOrientation:"from-image"}); }
+  catch(e){ src = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => bad(new Error("formato de imagem não suportado")); i.src = URL.createObjectURL(file); }); }
+  const w0 = src.width, h0 = src.height, k = Math.min(1, max / Math.max(w0, h0));
+  const c = document.createElement("canvas"); c.width = Math.round(w0 * k); c.height = Math.round(h0 * k);
+  c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
+  const blob = await new Promise(r => c.toBlob(r, "image/jpeg", q));
+  if(!blob) throw new Error("não deu para converter a foto");
+  return {blob, w:c.width, h:c.height};
+}
+async function uploadFiles(files){
+  const arr = [...files].filter(f => /^image\//.test(f.type) || /\.(heic|heif|jpe?g|png|webp)$/i.test(f.name));
+  if(!arr.length) return;
+  if(!navigator.onLine){ toast("Sem internet: tentem enviar as fotos quando a conexão voltar."); return; }
+  const day = uploadDay(); let ok = 0;
+  PH.busy += arr.length; renderPhotos();
+  for(const f of arr){
+    try{
+      const full = await shrink(f, 2048, .86), th = await shrink(f, 480, .74);
+      const id = crypto.randomUUID(), base = `${S.me.id}/${id}`;
+      let r = await sb.storage.from("fotos").upload(base + ".jpg", full.blob, {contentType:"image/jpeg"}); if(r.error) throw r.error;
+      r = await sb.storage.from("fotos").upload(base + "_t.jpg", th.blob, {contentType:"image/jpeg"}); if(r.error) throw r.error;
+      r = await sb.from("photos").insert({id, path:base + ".jpg", thumb:base + "_t.jpg", day, w:full.w, h:full.h, author:S.me.id}); if(r.error) throw r.error;
+      ok++;
+    }catch(e){ toast(`“${f.name}” não subiu: ${e.message || "erro"}`); }
+    PH.busy--; if(tab === "fotos" && PH.view < 0) renderPhotos();
+  }
+  if(ok) toast(`${ok} foto${ok > 1 ? "s" : ""} adicionada${ok > 1 ? "s" : ""}${day && dayById(day) ? " em " + fmtD(dayById(day).date) : ""}.`);
+  await loadPhotos();
+}
+async function getFull(p){
+  if(PH.full[p.id]) return PH.full[p.id];
+  await signUrls([p.path]);
+  const b = await (await fetch(purl(p.path))).blob();
+  const d = dayById(p.day);
+  return PH.full[p.id] = new File([b], `china2026-${d ? d.date : "viagem"}-${p.id.slice(0, 6)}.jpg`, {type:"image/jpeg"});
+}
+// iPhone/Android: abre a folha de compartilhar (“Salvar imagem”); computador: baixa o arquivo
+async function saveFiles(files){
+  if(navigator.canShare && navigator.canShare({files})){
+    try{ await navigator.share({files}); return; }catch(e){ if(e.name === "AbortError") return; }
+  }
+  files.forEach((f, i) => setTimeout(() => { const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000); }, i * 250));
+}
+function renderPhotos(){
+  if(PH.list === null){ $("#main").innerHTML = `<div class="card" style="margin-top:16px"><p style="margin:0">Carregando as fotos…</p></div>`; loadPhotos(); photosSubscribe(); return; }
+  photosSubscribe();
+  const counts = {}; PH.list.forEach(p => { const k = p.day || "_"; counts[k] = (counts[k] || 0) + 1; });
+  const t = todayIdx();
+  const chipDays = DAYS.filter((d, i) => counts[d.id] || i === t || d.id === PH.day);
+  const shown = PH.day === "all" ? PH.list : PH.list.filter(p => (p.day || "_") === PH.day);
+  const target = uploadDay(), td = target && dayById(target);
+  const thumb = (p, list) => { const who = S.profiles[p.author] || {}; return `<button class="ph" data-pid="${p.id}" aria-label="Foto de ${esc(who.name || "alguém")}${p.caption ? ": " + esc(p.caption) : ""}"><img loading="lazy" src="${esc(purl(p.thumb))}" alt=""><span class="who" style="--c:${esc(who.color || "#2C7660")}">${esc(initials(who.name))}</span></button>`; };
+  let grid;
+  if(!shown.length) grid = `<div class="card"><p style="margin:0">${PH.day === "all" ? "Nenhuma foto ainda. Toquem em “Adicionar fotos” para começar o álbum da viagem." : "Nenhuma foto neste dia ainda."}</p></div>`;
+  else if(PH.day === "all"){
+    const groups = [...DAYS.map(d => d.id), "_"].map(id => [id, shown.filter(p => (p.day || "_") === id)]).filter(([, l]) => l.length);
+    grid = groups.map(([id, l]) => { const d = dayById(id); return `<div class="phday">${d ? `${fmtD(d.date)} · ${esc(d.cn)}` : "Sem dia"} · ${l.length}</div><div class="phgrid">${l.map(p => thumb(p)).join("")}</div>`; }).join("");
+  } else grid = `<div class="phgrid">${shown.map(p => thumb(p)).join("")}</div>`;
+  $("#main").innerHTML = `<h2 class="sec">Fotos da viagem <span class="cnt">· ${PH.list.length}</span></h2>
+    <div class="fchips"><button data-fd="all" aria-pressed="${PH.day === "all"}">Todas<small>${PH.list.length}</small></button>${chipDays.map(d => `<button data-fd="${d.id}" aria-pressed="${PH.day === d.id}">${fmtD(d.date)} ${esc(d.cn)}<small>${counts[d.id] || 0}</small></button>`).join("")}${counts._ ? `<button data-fd="_" aria-pressed="${PH.day === "_"}">Sem dia<small>${counts._}</small></button>` : ""}</div>
+    <div class="phup">
+      <label class="pill pri" for="phIn">+ Adicionar fotos</label><input id="phIn" type="file" accept="image/*" multiple hidden>
+      ${PH.day !== "all" && shown.length ? `<button class="pill" id="phAll">Salvar as ${shown.length} no celular</button>` : ""}
+    </div>
+    <p style="font-size:12.5px;color:var(--muted);margin:-4px 0 10px">${PH.busy ? `Enviando ${PH.busy} foto${PH.busy > 1 ? "s" : ""}…` : `Fotos novas entram em ${td ? `${fmtD(td.date)} · ${esc(td.cn)}` : "“Sem dia”"}${PH.day === "all" ? " (escolham um dia acima para mudar)" : ""}.`}</p>
+    ${grid}`;
+  document.querySelectorAll("[data-fd]").forEach(b => b.onclick = () => { PH.day = b.dataset.fd; renderPhotos(); });
+  $("#phIn").onchange = e => { const f = e.target.files; if(f && f.length) uploadFiles(f); e.target.value = ""; };
+  document.querySelectorAll("[data-pid]").forEach(b => b.onclick = () => { const i = shown.findIndex(p => p.id === b.dataset.pid); openViewer(shown, i); });
+  const all = $("#phAll");
+  if(all) all.onclick = async () => {
+    if(all.dataset.ready){ saveFiles(shown.map(p => PH.full[p.id]).filter(Boolean)); return; }
+    all.disabled = true; let n = 0;
+    for(const p of shown){ try{ await getFull(p); }catch(e){} all.textContent = `Preparando ${++n} de ${shown.length}…`; }
+    all.disabled = false; all.dataset.ready = "1"; all.classList.add("pri"); all.textContent = `Pronto: salvar ${shown.length} fotos`;
+  };
+}
+function openViewer(list, i){ PH.vlist = list; PH.view = i; drawViewer(); }
+function closeViewer(){ PH.view = -1; $("#layer").innerHTML = ""; document.body.style.overflow = ""; if(tab === "fotos") renderPhotos(); }
+function drawViewer(editing){
+  const list = PH.vlist, p = list[PH.view]; if(!p){ closeViewer(); return; }
+  const who = S.profiles[p.author] || {}, d = dayById(p.day), mine = p.author === S.me.id;
+  document.body.style.overflow = "hidden";
+  $("#layer").innerHTML = `<div class="pv" role="dialog" aria-modal="true" aria-label="Foto">
+    <div class="pvtop"><span>${PH.view + 1} de ${list.length}</span><button id="pvX" aria-label="Fechar">×</button></div>
+    <div class="pvimg" id="pvArea"><img id="pvImg" src="${esc(purl(p.path) || purl(p.thumb))}" alt="${esc(p.caption || "Foto da viagem")}"></div>
+    <div class="pvbar">
+      ${editing ? `<input id="pvCapIn" maxlength="140" value="${esc(p.caption || "")}" placeholder="Escrevam uma legenda">` : p.caption ? `<p>${esc(p.caption)}</p>` : ""}
+      <p class="meta">por ${esc(who.name || "alguém")} · ${d ? `${fmtD(d.date)} · ${esc(d.cn)}` : "sem dia"}</p>
+      <div class="acts">
+        ${editing ? `<button class="pill pri" id="pvCapOk">Salvar legenda</button><button class="pill" id="pvCapNo">Cancelar</button>`
+          : `<button class="pill pri" id="pvSave">${PH.full[p.id] ? "Salvar no celular" : "Preparando…"}</button>${mine ? `<button class="pill" id="pvCap">Legenda</button><button class="pill warn" id="pvDel">Excluir</button>` : ""}`}
+      </div>
+    </div>
+    ${list.length > 1 ? `<button class="pvnav l" id="pvPrev" aria-label="Foto anterior">‹</button><button class="pvnav r" id="pvNext" aria-label="Próxima foto">›</button>` : ""}
+  </div>`;
+  const step = k => { PH.view = (PH.view + k + list.length) % list.length; drawViewer(); };
+  $("#pvX").onclick = closeViewer;
+  $("#pvPrev") && ($("#pvPrev").onclick = () => step(-1)); $("#pvNext") && ($("#pvNext").onclick = () => step(1));
+  let x0 = null; const area = $("#pvArea");
+  area.ontouchstart = e => { x0 = e.touches[0].clientX; };
+  area.ontouchend = e => { if(x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if(Math.abs(dx) > 50 && list.length > 1) step(dx < 0 ? 1 : -1); };
+  if(!purl(p.path)) signUrls([p.path]).then(() => { const img = $("#pvImg"); if(img && PH.vlist[PH.view] === p) img.src = purl(p.path); });
+  // a foto inteira é baixada já ao abrir, para o “Salvar” funcionar direto no toque
+  if(!PH.full[p.id]) getFull(p).then(() => { const b = $("#pvSave"); if(b && PH.vlist[PH.view] === p) b.textContent = "Salvar no celular"; }).catch(() => {});
+  if(editing){
+    $("#pvCapIn").focus();
+    $("#pvCapNo").onclick = () => drawViewer();
+    $("#pvCapOk").onclick = async () => { const caption = $("#pvCapIn").value.trim(); const {error} = await sb.from("photos").update({caption}).eq("id", p.id); if(error){ toast("Não salvou a legenda."); return; } p.caption = caption; drawViewer(); };
+    return;
+  }
+  $("#pvSave").onclick = async () => { const f = PH.full[p.id]; if(f){ saveFiles([f]); return; } $("#pvSave").textContent = "Preparando…"; try{ await getFull(p); $("#pvSave").textContent = "Pronto: toque para salvar"; }catch(e){ toast("Não deu para baixar a foto."); } };
+  $("#pvCap") && ($("#pvCap").onclick = () => drawViewer(true));
+  let armed = false;
+  $("#pvDel") && ($("#pvDel").onclick = async () => {
+    if(!armed){ armed = true; $("#pvDel").textContent = "Toque de novo para excluir"; return; }
+    const r1 = await sb.from("photos").delete().eq("id", p.id);
+    if(r1.error){ toast("Não deu para excluir."); return; }
+    await sb.storage.from("fotos").remove([p.path, p.thumb]);
+    PH.list = PH.list.filter(x => x.id !== p.id); list.splice(PH.view, 1); toast("Foto excluída.");
+    if(!list.length) closeViewer(); else { PH.view = Math.min(PH.view, list.length - 1); drawViewer(); }
+  });
+}
+document.addEventListener("keydown", e => { if(PH.view < 0) return; if(e.key === "ArrowRight" && PH.vlist.length > 1){ PH.view = (PH.view + 1) % PH.vlist.length; drawViewer(); } if(e.key === "ArrowLeft" && PH.vlist.length > 1){ PH.view = (PH.view - 1 + PH.vlist.length) % PH.vlist.length; drawViewer(); } if(e.key === "Escape") closeViewer(); });
+
 /* ---------- Abertura animada ---------- */
 // Os três viajantes em desenho (inspirados nas fotos, sem usar as fotos), com roupa chinesa e mala de rodinha.
 // Coordenadas de cada personagem: largura ~80, pés em y=170.
@@ -970,7 +1158,28 @@ const TRAVELERS = [
 function introScene(){
   const lantern = (x, s) => `<g transform="translate(${x} 34)"><g class="lantern"><path d="M0 0 V${12 * s}" stroke="#7A1F16" stroke-width="1.5"/><g transform="translate(0 ${12 * s}) scale(${s})"><rect x="-8" y="-3" width="16" height="6" rx="2" fill="#E8B84A"/><ellipse cx="0" cy="20" rx="19" ry="21" fill="#D7322B"/><path d="M-12 20 Q0 6 12 20 Q0 34 -12 20" stroke="#B0241F" stroke-width="1.5" fill="none"/><path d="M0 0 V41" stroke="#B0241F" stroke-width="1.2"/><rect x="-8" y="38" width="16" height="6" rx="2" fill="#E8B84A"/><path d="M-3 44 L-4 60 M0 44 V62 M3 44 L4 60" stroke="#E8B84A" stroke-width="1.6"/><text x="0" y="26" text-anchor="middle" font-family="Noto Serif SC,serif" font-weight="900" font-size="15" fill="#F7D27A">福</text></g></g></g>`;
   const petals = Array.from({length:16}, (_, i) => `<circle class="petal" cx="${(i * 53 + 17) % 420}" cy="0" r="${2 + (i % 3)}" fill="${i % 2 ? "#E8505B" : "#F2C14E"}" style="animation-duration:${4 + (i % 5) * .7}s;animation-delay:${-(i * .37).toFixed(2)}s"/>`).join("");
-  const walkers = TRAVELERS_DETAILED.map((o, i) => `<g class="walker"><g transform="translate(${230 - i * 118} 373) scale(1.12)"><g class="bob" style="animation-delay:${(-i * .09).toFixed(2)}s">${traveler(o)}</g></g></g>`).join("");
+  // panda correndo atrás dos viajantes, com um bambu na mão (de perfil, virado para a direita; pés em y=170)
+  const k = "#1E1C1B";
+  const panda = `<g class="panda"><g transform="translate(0 380) scale(1.05)"><g class="pbob">
+    <g class="pleg b"><rect x="22" y="138" width="14" height="30" rx="7" fill="${k}"/></g>
+    <g class="pleg b"><rect x="50" y="138" width="14" height="30" rx="7" fill="${k}"/></g>
+    <circle cx="12" cy="124" r="6" fill="#F4F1EC" stroke="${k}" stroke-width="1.4"/>
+    <ellipse cx="40" cy="126" rx="28" ry="23" fill="#F4F1EC" stroke="${k}" stroke-width="1.6"/>
+    <path d="M24 110 Q42 100 62 110 Q60 121 44 121 Q30 121 24 110 Z" fill="${k}"/>
+    <g class="pleg"><rect x="28" y="140" width="14" height="30" rx="7" fill="${k}"/></g>
+    <g class="pleg"><rect x="56" y="140" width="14" height="30" rx="7" fill="${k}"/></g>
+    <g class="pleg b"><rect x="22" y="110" width="12" height="28" rx="6" fill="${k}"/></g>
+    <g class="pleg"><g><rect x="58" y="108" width="12" height="28" rx="6" fill="${k}"/><path d="M64 140 L84 92" stroke="#5E9E3A" stroke-width="5" stroke-linecap="round"/><path d="M68 131 L72 128 M74 116 L78 113 M79 104 L83 101" stroke="#3F7426" stroke-width="2"/><path d="M83 94 Q92 86 95 90 Q90 96 83 94 Z" fill="#7CC04F"/></g></g>
+    <circle cx="44" cy="68" r="8" fill="${k}"/><circle cx="72" cy="67" r="8" fill="${k}"/>
+    <circle cx="58" cy="86" r="24" fill="#F4F1EC" stroke="${k}" stroke-width="1.6"/>
+    <ellipse cx="50" cy="84" rx="6.5" ry="8.5" fill="${k}" transform="rotate(-25 50 84)"/><ellipse cx="67" cy="84" rx="6.5" ry="8.5" fill="${k}" transform="rotate(25 67 84)"/>
+    <circle cx="51" cy="83" r="2.6" fill="#fff"/><circle cx="66" cy="83" r="2.6" fill="#fff"/><circle cx="51.6" cy="83.4" r="1.3" fill="${k}"/><circle cx="66.6" cy="83.4" r="1.3" fill="${k}"/>
+    <ellipse cx="59" cy="94" rx="4" ry="2.8" fill="${k}"/>
+    <path d="M54 99 Q59 106 64 99 Q59 101 54 99 Z" fill="#E06B6B" stroke="${k}" stroke-width="1.2"/>
+    <circle cx="46" cy="96" r="3.2" fill="#F3A4A4" opacity=".55"/><circle cx="71" cy="96" r="3.2" fill="#F3A4A4" opacity=".55"/>
+    <path d="M30 58 l-4 -7 M24 64 l-7 -3" stroke="#B3362A" stroke-width="2.4" stroke-linecap="round"/>
+  </g></g></g>`;
+  const walkers = panda + TRAVELERS_DETAILED.map((o, i) => `<g class="walker"><g transform="translate(${230 - i * 118} 373) scale(1.12)"><g class="bob" style="animation-delay:${(-i * .09).toFixed(2)}s">${traveler(o)}</g></g></g>`).join("");
   return `<defs><linearGradient id="isky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCE7C4"/><stop offset=".55" stop-color="#F8C27E"/><stop offset="1" stop-color="#F09A62"/></linearGradient></defs>
     <rect width="400" height="720" fill="url(#isky)"/>
     <circle cx="300" cy="360" r="70" fill="#FFDD8F" opacity=".9"/>
