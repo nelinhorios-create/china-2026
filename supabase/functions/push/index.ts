@@ -1,13 +1,15 @@
 // Função "push" do Supabase: envia as notificações do China 2026.
 //  { action: "test" } (chamada pelo app, com o login do viajante): manda um teste para os aparelhos dele.
 //  { action: "tick" } (chamada pelo agendador a cada minuto): avisos de alterações, lembretes, resumo das 7h e trens.
-// Segredos (Edge Functions › Secrets): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:seu@email), APP_URL.
+// Único segredo (Edge Functions › Secrets): VAPID_PRIVATE_KEY. A chave pública e o endereço do site já são públicos.
+// Publicar com "Verify JWT" desligado: o agendador chama sem chave; o teste confere o login do viajante aqui dentro.
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
+const VAPID_PUBLIC = "BPqfc7Y9TOwr4qNRLo_AZKdmpUxSITCxNfrh9GLHxkGu0BjtE8cktzqY4SKl2vWb-Dnu14Z6OkShJ9qcbsDL5iY";
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-webpush.setVapidDetails(Deno.env.get("VAPID_SUBJECT") ?? "mailto:viagem@example.com",
-  Deno.env.get("VAPID_PUBLIC_KEY")!, Deno.env.get("VAPID_PRIVATE_KEY")!);
+webpush.setVapidDetails(Deno.env.get("VAPID_SUBJECT") ?? "mailto:china2026@example.com",
+  Deno.env.get("VAPID_PUBLIC_KEY") ?? VAPID_PUBLIC, Deno.env.get("VAPID_PRIVATE_KEY")!);
 const APP_URL = Deno.env.get("APP_URL") ?? "https://nelinhorios-create.github.io/china-2026/";
 const CORS = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"};
 
