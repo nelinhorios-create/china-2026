@@ -260,6 +260,18 @@ body{margin:0}
 .pvnav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:56px;border:0;background:rgba(255,255,255,.1);color:#fff;font-size:28px;cursor:pointer;border-radius:10px}
 .pvnav.l{left:max(8px,env(safe-area-inset-left,0px))} .pvnav.r{right:max(8px,env(safe-area-inset-right,0px))}
 @media (hover:none){.pvnav{display:none}}
+.pvsel{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:5px 8px;font-size:14px;max-width:70%}
+.pvsel option{color:#111}
+.albgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.alb{border:0;padding:0;background:none;text-align:left;cursor:pointer;display:grid;gap:3px;min-width:0;color:var(--ink)}
+.alb .cover{aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:var(--sunk);display:grid;place-items:center;max-width:100%;box-shadow:var(--shadow)}
+.alb .cover img{width:100%;height:100%;object-fit:cover;display:block}
+.alb .cover .empty{font:900 34px/1 var(--f-zh);color:var(--line)}
+.alb b{font-weight:600;font-size:14.5px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alb small{color:var(--muted);font-size:12px}
+.ph.sel{outline:3px solid var(--accent);outline-offset:-3px}
+.ph .tick{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.25);color:#fff;font:700 13px/18px var(--f-body);text-align:center}
+.ph.sel .tick{background:var(--accent)}
 
 /* abertura: os três viajantes atravessam a tela */
 #intro{position:fixed;inset:0;z-index:80;background:#F7C98E;overflow:hidden;transition:opacity .45s ease}
@@ -828,7 +840,7 @@ async function renderAccount(){
       <label class="switch"><span>Lembrete antes de cada item<small>Do roteiro do dia, no horário da China</small></span>${sel("pRemind", pr.remind, [[0,"Desligado"],[15,"15 min"],[30,"30 min"],[60,"1 hora"]])}</label>
       <label class="switch"><span>Resumo do dia às 7h<small>O que tem hoje e a cidade</small></span><input type="checkbox" id="pMorning" ${pr.morning ? "checked" : ""}></label>
       <label class="switch"><span>Trens<small>2h antes da partida e no dia em que a venda abre</small></span><input type="checkbox" id="pTrains" ${pr.trains ? "checked" : ""}></label>
-      <label class="switch"><span>Ajustes e novas programações<small>Quando alguém do grupo adiciona, muda ou oculta algo</small></span><input type="checkbox" id="pChanges" ${pr.changes ? "checked" : ""}></label>
+      <label class="switch"><span>Novidades do grupo<small>Atividades novas, ajustes no roteiro, fotos e álbuns. Várias mudanças seguidas viram um resumo</small></span><input type="checkbox" id="pChanges" ${pr.changes ? "checked" : ""}></label>
       <label class="switch"><span>Silêncio à noite<small>Nada entre ${esc(pr.quietFrom)} e ${esc(pr.quietTo)} (horário da China)</small></span><input type="checkbox" id="pQuiet" ${pr.quiet ? "checked" : ""}></label>
     </div>
     <h2 class="sec">Segurança</h2>
@@ -890,7 +902,8 @@ $("#authForm").onsubmit = async e => {
 
 /* ---------- Fotos da viagem ---------- */
 // Tabela "photos" + bucket privado "fotos" no Supabase. Cada foto sobe em duas versões: até 2048 px e miniatura de 480 px.
-const PH = {list:null, urls:{}, full:{}, day:"all", busy:0, sub:null, vlist:[], view:-1};
+const PH = {list:null, albums:[], urls:{}, full:{}, day:"all", busy:0, sub:null, vlist:[], view:-1,
+  mode:"dias", album:null, picking:null, creating:false, renaming:false, delArmed:false};
 const dayById = id => DAYS.find(d => d.id === id);
 async function signUrls(paths){
   const now = Date.now(), need = [...new Set(paths)].filter(p => p && (!PH.urls[p] || PH.urls[p].exp < now + 120e3));
@@ -901,14 +914,18 @@ async function signUrls(paths){
 }
 const purl = p => (PH.urls[p] || {}).u || "";
 async function loadPhotos(){
-  const {data, error} = await sb.from("photos").select("id, path, thumb, day, caption, author, created_at, w, h").order("created_at", {ascending:false});
+  const [{data, error}, al] = await Promise.all([
+    sb.from("photos").select("id, path, thumb, day, caption, author, created_at, w, h, album_id").order("created_at", {ascending:false}),
+    sb.from("albums").select("id, name, created_by, created_at").order("created_at")]);
   if(error){ PH.list = PH.list || []; toast("Não deu para carregar as fotos agora."); }
-  else { PH.list = data; await signUrls(data.map(p => p.thumb)); }
+  else { PH.list = data; PH.albums = al.data || []; await signUrls(data.map(p => p.thumb)); }
   if(tab === "fotos" && PH.view < 0) renderPhotos();
 }
 function photosSubscribe(){
   if(PH.sub) return;
-  PH.sub = sb.channel("photos-live").on("postgres_changes", {event:"*", schema:"public", table:"photos"}, () => loadPhotos()).subscribe();
+  PH.sub = sb.channel("photos-live")
+    .on("postgres_changes", {event:"*", schema:"public", table:"photos"}, () => loadPhotos())
+    .on("postgres_changes", {event:"*", schema:"public", table:"albums"}, () => loadPhotos()).subscribe();
 }
 // dia de destino de uma foto nova: o dia escolhido no filtro; sem filtro, o dia de hoje da viagem
 const uploadDay = () => PH.day !== "all" && PH.day !== "_" ? PH.day : (DAYS[todayIdx()] || {}).id || null;
@@ -923,7 +940,7 @@ async function shrink(file, max, q){
   if(!blob) throw new Error("não deu para converter a foto");
   return {blob, w:c.width, h:c.height};
 }
-async function uploadFiles(files){
+async function uploadFiles(files, albumId = null){
   const arr = [...files].filter(f => /^image\//.test(f.type) || /\.(heic|heif|jpe?g|png|webp)$/i.test(f.name));
   if(!arr.length) return;
   if(!navigator.onLine){ toast("Sem internet: tentem enviar as fotos quando a conexão voltar."); return; }
@@ -935,12 +952,13 @@ async function uploadFiles(files){
       const id = crypto.randomUUID(), base = `${S.me.id}/${id}`;
       let r = await sb.storage.from("fotos").upload(base + ".jpg", full.blob, {contentType:"image/jpeg"}); if(r.error) throw r.error;
       r = await sb.storage.from("fotos").upload(base + "_t.jpg", th.blob, {contentType:"image/jpeg"}); if(r.error) throw r.error;
-      r = await sb.from("photos").insert({id, path:base + ".jpg", thumb:base + "_t.jpg", day, w:full.w, h:full.h, author:S.me.id}); if(r.error) throw r.error;
+      r = await sb.from("photos").insert({id, path:base + ".jpg", thumb:base + "_t.jpg", day, w:full.w, h:full.h, author:S.me.id, album_id:albumId}); if(r.error) throw r.error;
       ok++;
     }catch(e){ toast(`“${f.name}” não subiu: ${e.message || "erro"}`); }
     PH.busy--; if(tab === "fotos" && PH.view < 0) renderPhotos();
   }
-  if(ok) toast(`${ok} foto${ok > 1 ? "s" : ""} adicionada${ok > 1 ? "s" : ""}${day && dayById(day) ? " em " + fmtD(dayById(day).date) : ""}.`);
+  const alb = albumId && PH.albums.find(a => a.id === albumId);
+  if(ok) toast(`${ok} foto${ok > 1 ? "s" : ""} adicionada${ok > 1 ? "s" : ""}${alb ? ` em “${alb.name}”` : day && dayById(day) ? " em " + fmtD(dayById(day).date) : ""}.`);
   await loadPhotos();
 }
 async function getFull(p){
@@ -960,6 +978,7 @@ async function saveFiles(files){
 function renderPhotos(){
   if(PH.list === null){ $("#main").innerHTML = `<div class="card" style="margin-top:16px"><p style="margin:0">Carregando as fotos…</p></div>`; loadPhotos(); photosSubscribe(); return; }
   photosSubscribe();
+  if(PH.mode === "albuns"){ renderAlbums(); return; }
   const counts = {}; PH.list.forEach(p => { const k = p.day || "_"; counts[k] = (counts[k] || 0) + 1; });
   const t = todayIdx();
   const chipDays = DAYS.filter((d, i) => counts[d.id] || i === t || d.id === PH.day);
@@ -972,7 +991,7 @@ function renderPhotos(){
     const groups = [...DAYS.map(d => d.id), "_"].map(id => [id, shown.filter(p => (p.day || "_") === id)]).filter(([, l]) => l.length);
     grid = groups.map(([id, l]) => { const d = dayById(id); return `<div class="phday">${d ? `${fmtD(d.date)} · ${esc(d.cn)}` : "Sem dia"} · ${l.length}</div><div class="phgrid">${l.map(p => thumb(p)).join("")}</div>`; }).join("");
   } else grid = `<div class="phgrid">${shown.map(p => thumb(p)).join("")}</div>`;
-  $("#main").innerHTML = `<h2 class="sec">Fotos da viagem <span class="cnt">· ${PH.list.length}</span></h2>
+  $("#main").innerHTML = `${photoHead()}
     <div class="fchips"><button data-fd="all" aria-pressed="${PH.day === "all"}">Todas<small>${PH.list.length}</small></button>${chipDays.map(d => `<button data-fd="${d.id}" aria-pressed="${PH.day === d.id}">${fmtD(d.date)} ${esc(d.cn)}<small>${counts[d.id] || 0}</small></button>`).join("")}${counts._ ? `<button data-fd="_" aria-pressed="${PH.day === "_"}">Sem dia<small>${counts._}</small></button>` : ""}</div>
     <div class="phup">
       <label class="pill pri" for="phIn">+ Adicionar fotos</label><input id="phIn" type="file" accept="image/*" multiple hidden>
@@ -980,6 +999,7 @@ function renderPhotos(){
     </div>
     <p style="font-size:12.5px;color:var(--muted);margin:-4px 0 10px">${PH.busy ? `Enviando ${PH.busy} foto${PH.busy > 1 ? "s" : ""}…` : `Fotos novas entram em ${td ? `${fmtD(td.date)} · ${esc(td.cn)}` : "“Sem dia”"}${PH.day === "all" ? " (escolham um dia acima para mudar)" : ""}.`}</p>
     ${grid}`;
+  wirePhotoHead();
   document.querySelectorAll("[data-fd]").forEach(b => b.onclick = () => { PH.day = b.dataset.fd; renderPhotos(); });
   $("#phIn").onchange = e => { const f = e.target.files; if(f && f.length) uploadFiles(f); e.target.value = ""; };
   document.querySelectorAll("[data-pid]").forEach(b => b.onclick = () => { const i = shown.findIndex(p => p.id === b.dataset.pid); openViewer(shown, i); });
@@ -990,6 +1010,92 @@ function renderPhotos(){
     for(const p of shown){ try{ await getFull(p); }catch(e){} all.textContent = `Preparando ${++n} de ${shown.length}…`; }
     all.disabled = false; all.dataset.ready = "1"; all.classList.add("pri"); all.textContent = `Pronto: salvar ${shown.length} fotos`;
   };
+}
+// cabeçalho comum da aba: total e troca entre "Por dia" e "Álbuns"
+const photoHead = () => `<h2 class="sec">Fotos da viagem <span class="cnt">· ${PH.list.length}</span></h2>
+  <div class="seg" id="phMode" style="margin-bottom:12px"><button type="button" data-pm="dias" aria-pressed="${PH.mode === "dias"}">Por dia</button><button type="button" data-pm="albuns" aria-pressed="${PH.mode === "albuns"}">Álbuns · ${PH.albums.length}</button></div>`;
+function wirePhotoHead(){
+  document.querySelectorAll("[data-pm]").forEach(b => b.onclick = () => { PH.mode = b.dataset.pm; PH.album = null; PH.picking = null; PH.creating = false; renderPhotos(); scrollTo({top:0}); });
+}
+const photoThumb = (p, picking) => { const who = S.profiles[p.author] || {}, sel = picking && picking.has(p.id);
+  return `<button class="ph${sel ? " sel" : ""}" data-pid="${p.id}" aria-pressed="${!!sel}" aria-label="Foto de ${esc(who.name || "alguém")}${p.caption ? ": " + esc(p.caption) : ""}"><img loading="lazy" src="${esc(purl(p.thumb))}" alt=""><span class="who" style="--c:${esc(who.color || "#2C7660")}">${esc(initials(who.name))}</span>${picking ? `<span class="tick">${sel ? "✓" : ""}</span>` : ""}</button>`; };
+function renderAlbums(){
+  if(PH.album){ renderAlbum(); return; }
+  const cards = PH.albums.slice().reverse().map(a => {
+    const ps = PH.list.filter(p => p.album_id === a.id), cover = ps[0], who = S.profiles[a.created_by] || {};
+    return `<button class="alb" data-aid="${a.id}"><span class="cover">${cover ? `<img loading="lazy" src="${esc(purl(cover.thumb))}" alt="">` : `<span class="empty">游</span>`}</span>
+      <b>${esc(a.name)}</b><small>${ps.length} foto${ps.length === 1 ? "" : "s"} · por ${esc((who.name || "alguém").split(" ")[0])}</small></button>`; }).join("");
+  $("#main").innerHTML = `${photoHead()}
+    ${PH.creating ? `<form class="card" id="albNew" style="margin-bottom:12px"><div class="fld"><label for="albName">Nome do álbum</label><input id="albName" maxlength="60" placeholder="Ex.: Muralha da China" required></div>
+      <div class="acts"><button class="pill pri" type="submit">Criar álbum</button><button class="pill" type="button" id="albCancel">Cancelar</button></div></form>`
+      : `<div class="phup"><button class="pill pri" id="albAdd">+ Novo álbum</button></div>`}
+    ${PH.albums.length ? `<div class="albgrid">${cards}</div>` : `<div class="card"><p style="margin:0">Nenhum álbum ainda. Criem um para cada passeio (ex.: “Disney”, “Muralha”, “Comidas”) e coloquem fotos novas ou as que já estão no app.</p></div>`}`;
+  wirePhotoHead();
+  $("#albAdd") && ($("#albAdd").onclick = () => { PH.creating = true; renderAlbums(); setTimeout(() => $("#albName")?.focus(), 30); });
+  $("#albCancel") && ($("#albCancel").onclick = () => { PH.creating = false; renderAlbums(); });
+  $("#albNew") && ($("#albNew").onsubmit = async e => {
+    e.preventDefault(); const name = $("#albName").value.trim(); if(!name) return;
+    const {data, error} = await sb.from("albums").insert({name, created_by:S.me.id}).select().single();
+    if(error){ toast("Não deu para criar o álbum."); return; }
+    PH.albums.push(data); PH.creating = false; PH.album = data.id; toast(`Álbum “${name}” criado.`); renderAlbums();
+  });
+  document.querySelectorAll("[data-aid]").forEach(b => b.onclick = () => { PH.album = b.dataset.aid; renderAlbums(); scrollTo({top:0}); });
+}
+function renderAlbum(){
+  const a = PH.albums.find(x => x.id === PH.album); if(!a){ PH.album = null; renderAlbums(); return; }
+  const mine = a.created_by === S.me.id, who = S.profiles[a.created_by] || {};
+  const list = PH.list.filter(p => p.album_id === a.id);
+  if(PH.picking){
+    const others = PH.list.filter(p => p.album_id !== a.id);
+    $("#main").innerHTML = `${photoHead()}
+      <div class="card" style="margin-bottom:12px"><h3>Colocar fotos em “${esc(a.name)}”</h3><p>Toquem nas fotos para marcar. Fotos que já estão em outro álbum mudam para este.</p>
+      <div class="acts"><button class="pill pri" id="pkOk" ${PH.picking.size ? "" : "disabled"}>Colocar ${PH.picking.size || ""} foto${PH.picking.size === 1 ? "" : "s"}</button><button class="pill" id="pkNo">Cancelar</button></div></div>
+      ${others.length ? `<div class="phgrid">${others.map(p => photoThumb(p, PH.picking)).join("")}</div>` : `<div class="card"><p style="margin:0">Todas as fotos do app já estão neste álbum.</p></div>`}`;
+    wirePhotoHead();
+    document.querySelectorAll("[data-pid]").forEach(b => b.onclick = () => { const id = b.dataset.pid; PH.picking.has(id) ? PH.picking.delete(id) : PH.picking.add(id); renderAlbum(); });
+    $("#pkNo").onclick = () => { PH.picking = null; renderAlbum(); };
+    $("#pkOk").onclick = async () => {
+      const ids = [...PH.picking]; $("#pkOk").disabled = true; $("#pkOk").textContent = "Colocando…"; let ok = 0;
+      for(const id of ids){ const {error} = await sb.rpc("set_photo_album", {p_photo:id, p_album:a.id}); if(!error){ ok++; const p = PH.list.find(x => x.id === id); if(p) p.album_id = a.id; } }
+      PH.picking = null; toast(`${ok} foto${ok === 1 ? "" : "s"} colocada${ok === 1 ? "" : "s"} em “${a.name}”.`); renderAlbum();
+    };
+    return;
+  }
+  $("#main").innerHTML = `${photoHead()}
+    <button class="lnkbtn" id="albBack" style="margin-bottom:6px">‹ Todos os álbuns</button>
+    ${PH.renaming ? `<form id="albRen" class="card" style="margin-bottom:10px"><div class="fld"><label for="albRenIn">Novo nome</label><input id="albRenIn" maxlength="60" value="${esc(a.name)}" required></div><div class="acts"><button class="pill pri" type="submit">Salvar nome</button><button class="pill" type="button" id="albRenNo">Cancelar</button></div></form>`
+      : `<h2 style="font:800 24px/1.15 var(--f-disp);margin:2px 0 2px;letter-spacing:-.01em">${esc(a.name)}</h2><p style="margin:0 0 12px;color:var(--muted);font-size:13px">${list.length} foto${list.length === 1 ? "" : "s"} · criado por ${esc(who.name || "alguém")}</p>`}
+    <div class="phup">
+      <label class="pill pri" for="phInA">+ Enviar fotos</label><input id="phInA" type="file" accept="image/*" multiple hidden>
+      <button class="pill" id="albPick">Escolher fotos do app</button>
+      ${list.length ? `<button class="pill" id="phAll">Salvar as ${list.length} no celular</button>` : ""}
+      ${mine && !PH.renaming ? `<button class="pill" id="albRename">Renomear</button><button class="pill warn" id="albDel">${PH.delArmed ? "Toque de novo para apagar o álbum" : "Apagar álbum"}</button>` : ""}
+    </div>
+    ${PH.busy ? `<p style="font-size:12.5px;color:var(--muted);margin:-4px 0 10px">Enviando ${PH.busy} foto${PH.busy > 1 ? "s" : ""}…</p>` : ""}
+    ${list.length ? `<div class="phgrid">${list.map(p => photoThumb(p)).join("")}</div>` : `<div class="card"><p style="margin:0">Álbum vazio. Enviem fotos novas ou escolham fotos que já estão no app.</p></div>`}`;
+  wirePhotoHead();
+  $("#albBack").onclick = () => { PH.album = null; PH.renaming = false; PH.delArmed = false; renderAlbums(); };
+  $("#phInA").onchange = e => { const f = e.target.files; if(f && f.length) uploadFiles(f, a.id); e.target.value = ""; };
+  $("#albPick").onclick = () => { PH.picking = new Set(); renderAlbum(); scrollTo({top:0}); };
+  document.querySelectorAll("[data-pid]").forEach(b => b.onclick = () => openViewer(list, list.findIndex(p => p.id === b.dataset.pid)));
+  const all = $("#phAll");
+  if(all) all.onclick = async () => {
+    if(all.dataset.ready){ saveFiles(list.map(p => PH.full[p.id]).filter(Boolean)); return; }
+    all.disabled = true; let n = 0;
+    for(const p of list){ try{ await getFull(p); }catch(e){} all.textContent = `Preparando ${++n} de ${list.length}…`; }
+    all.disabled = false; all.dataset.ready = "1"; all.classList.add("pri"); all.textContent = `Pronto: salvar ${list.length} fotos`;
+  };
+  $("#albRename") && ($("#albRename").onclick = () => { PH.renaming = true; renderAlbum(); });
+  $("#albRenNo") && ($("#albRenNo").onclick = () => { PH.renaming = false; renderAlbum(); });
+  $("#albRen") && ($("#albRen").onsubmit = async e => { e.preventDefault(); const name = $("#albRenIn").value.trim(); if(!name) return;
+    const {error} = await sb.from("albums").update({name}).eq("id", a.id); if(error){ toast("Não deu para renomear."); return; } a.name = name; PH.renaming = false; renderAlbum(); });
+  $("#albDel") && ($("#albDel").onclick = async () => {
+    if(!PH.delArmed){ PH.delArmed = true; renderAlbum(); return; }
+    const {error} = await sb.from("albums").delete().eq("id", a.id); PH.delArmed = false;
+    if(error){ toast("Não deu para apagar o álbum."); return; }
+    PH.albums = PH.albums.filter(x => x.id !== a.id); PH.list.forEach(p => { if(p.album_id === a.id) p.album_id = null; });
+    PH.album = null; toast("Álbum apagado. As fotos continuam no app."); renderAlbums();
+  });
 }
 function openViewer(list, i){ PH.vlist = list; PH.view = i; drawViewer(); }
 function closeViewer(){ PH.view = -1; $("#layer").innerHTML = ""; document.body.style.overflow = ""; if(tab === "fotos") renderPhotos(); }
@@ -1003,6 +1109,7 @@ function drawViewer(editing){
     <div class="pvbar">
       ${editing ? `<input id="pvCapIn" maxlength="140" value="${esc(p.caption || "")}" placeholder="Escrevam uma legenda">` : p.caption ? `<p>${esc(p.caption)}</p>` : ""}
       <p class="meta">por ${esc(who.name || "alguém")} · ${d ? `${fmtD(d.date)} · ${esc(d.cn)}` : "sem dia"}</p>
+      ${editing ? "" : `<label class="meta" style="display:flex;align-items:center;gap:8px;margin:6px 0 2px">Álbum <select id="pvAlb" class="pvsel"><option value="">Sem álbum</option>${PH.albums.map(a => `<option value="${a.id}" ${p.album_id === a.id ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select></label>`}
       <div class="acts">
         ${editing ? `<button class="pill pri" id="pvCapOk">Salvar legenda</button><button class="pill" id="pvCapNo">Cancelar</button>`
           : `<button class="pill pri" id="pvSave">${PH.full[p.id] ? "Salvar no celular" : "Preparando…"}</button>${mine ? `<button class="pill" id="pvCap">Legenda</button><button class="pill warn" id="pvDel">Excluir</button>` : ""}`}
@@ -1027,6 +1134,12 @@ function drawViewer(editing){
   }
   $("#pvSave").onclick = async () => { const f = PH.full[p.id]; if(f){ saveFiles([f]); return; } $("#pvSave").textContent = "Preparando…"; try{ await getFull(p); $("#pvSave").textContent = "Pronto: toque para salvar"; }catch(e){ toast("Não deu para baixar a foto."); } };
   $("#pvCap") && ($("#pvCap").onclick = () => drawViewer(true));
+  $("#pvAlb") && ($("#pvAlb").onchange = async e => {
+    const id = e.target.value || null, {error} = await sb.rpc("set_photo_album", {p_photo:p.id, p_album:id});
+    if(error){ toast("Não deu para mudar o álbum."); e.target.value = p.album_id || ""; return; }
+    p.album_id = id; const src = PH.list.find(x => x.id === p.id); if(src) src.album_id = id;
+    toast(id ? `Foto colocada em “${PH.albums.find(a => a.id === id).name}”.` : "Foto tirada do álbum.");
+  });
   let armed = false;
   $("#pvDel") && ($("#pvDel").onclick = async () => {
     if(!armed){ armed = true; $("#pvDel").textContent = "Toque de novo para excluir"; return; }
@@ -1227,7 +1340,10 @@ async function startApp(user){
   if(!S.profile && S.profiles[S.me.id]) S.profile = S.profiles[S.me.id];
   subscribe();
   setTimeout(() => $("#strip").querySelector(`[data-i="${cur}"]`)?.scrollIntoView({inline:"center", block:"nearest"}), 0);
-  if(q) history.replaceState(null, "", location.pathname);
+  // links das notificações: ?tab=fotos&album=<id> abre o álbum
+  const qs = new URLSearchParams(location.search);
+  if(qs.get("tab") === "fotos"){ const alb = qs.get("album"); if(alb){ PH.mode = "albuns"; PH.album = alb; } setTab("fotos"); }
+  if(q || qs.get("tab")) history.replaceState(null, "", location.pathname);
 }
 async function boot(){
   tick(); setInterval(() => { tick(); if(S.me && tab === "dia" && DAYS.length && !$("#layer").innerHTML && DAYS[cur].date === zoneNow("Asia/Shanghai").iso) renderDay(); }, 60000);
