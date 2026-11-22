@@ -1,36 +1,48 @@
 -- China 2026 · estrutura do banco no Supabase
 -- Rode uma vez no SQL Editor do projeto (Run). Pode rodar de novo sem estragar nada.
 
--- 1) Lista de viajantes: só estes e-mails conseguem criar conta e ver o roteiro
-create table if not exists public.allowed_emails (email text primary key);
-alter table public.allowed_emails enable row level security;  -- ninguém lê pelo app
+-- Login por usuário e senha: o app transforma o usuário num e-mail interno (usuario@china2026.example.com),
+-- que nunca recebe mensagem. Para criar conta é preciso o código da viagem (definido no arquivo de carga).
 
-create or replace function public.is_traveler() returns boolean
-language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.allowed_emails a where a.email = lower(coalesce(auth.jwt() ->> 'email', '')));
-$$;
+-- 1) Código da viagem
+create table if not exists public.app_secrets (key text primary key, value text not null);
+alter table public.app_secrets enable row level security;  -- ninguém lê pelo app
 
-create or replace function public.check_allowed_email() returns trigger
+create or replace function public.check_invite_code() returns trigger
 language plpgsql security definer set search_path = public as $$
+declare code text;
 begin
-  if not exists (select 1 from public.allowed_emails where email = lower(new.email)) then
-    raise exception 'E-mail fora da lista de viajantes';
+  select value into code from public.app_secrets where key = 'invite_code';
+  if code is null or coalesce(new.raw_user_meta_data ->> 'code', '') <> code then
+    raise exception 'Codigo da viagem invalido';
   end if;
+  if new.email !~ '^[a-z0-9._-]{3,20}@china2026\.example\.com$' then
+    raise exception 'Usuario invalido';
+  end if;
+  new.raw_user_meta_data := new.raw_user_meta_data - 'code';  -- não guarda o código
   return new;
 end $$;
 drop trigger if exists check_allowed_email on auth.users;
-create trigger check_allowed_email before insert on auth.users
-  for each row execute function public.check_allowed_email();
+drop trigger if exists check_invite_code on auth.users;
+create trigger check_invite_code before insert on auth.users
+  for each row execute function public.check_invite_code();
 
--- 2) Perfis (nome, cor e preferências de notificação)
+-- 2) Perfis (usuário, nome, cor e preferências de notificação). Ter perfil = ser viajante.
 create table if not exists public.profiles (
   id uuid primary key references auth.users on delete cascade,
+  username text unique,
   name text,
   color text default '#2C7660',
   settings jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
 );
+alter table public.profiles add column if not exists username text unique;
 alter table public.profiles enable row level security;
+
+create or replace function public.is_traveler() returns boolean
+language sql stable security definer set search_path = public as $$
+  select auth.uid() is not null and exists (select 1 from public.profiles p where p.id = auth.uid());
+$$;
 drop policy if exists "viajantes leem perfis" on public.profiles;
 create policy "viajantes leem perfis" on public.profiles for select using (public.is_traveler());
 drop policy if exists "cada um edita o seu perfil" on public.profiles;
@@ -39,8 +51,8 @@ create policy "cada um edita o seu perfil" on public.profiles for update using (
 create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.profiles (id, name)
-  values (new.id, coalesce(nullif(new.raw_user_meta_data ->> 'name', ''), split_part(new.email, '@', 1)))
+  insert into public.profiles (id, username, name)
+  values (new.id, split_part(new.email, '@', 1), coalesce(nullif(new.raw_user_meta_data ->> 'name', ''), split_part(new.email, '@', 1)))
   on conflict (id) do nothing;
   return new;
 end $$;
