@@ -61,39 +61,62 @@ async function tick() {
   const edits: Record<string, any> = {}; (editRows ?? []).forEach((r: any) => edits[r.id] = r.body);
   let sent = 0;
 
-  // 1) alterações feitas pelo grupo
-  const {data: queue} = await sb.from("notify_queue").select("*").order("id").limit(100);
-  const photoBy: Record<string, {n: number; day: string}> = {};
+  // 1) o que o grupo fez desde o último minuto
+  //    roteiro: até 2 mudanças da mesma pessoa viram avisos separados; mais que isso, um resumo
+  //    fotos: um aviso por pessoa e álbum ("Ana adicionou 5 fotos em Muralha"); álbum novo; recado (NOTE, inserido por SQL)
+  const {data: queue} = await sb.from("notify_queue").select("*").order("id").limit(200);
+  const {data: albumRows} = await sb.from("albums").select("id, name");
+  const albumName = (id: string) => (albumRows ?? []).find((a: any) => a.id === id)?.name || "";
+  const first = (id: string) => P[id]?.name?.split(" ")[0] || "Alguém";
+  const changesFor = (author: string | null) => users.filter(u => u !== author && P[u].p.changes && !quietNow(P[u].p, now.min));
+  const editBy: Record<string, {msgs: {title: string; body: string; tag: string; url: string}[]; days: Set<string>}> = {};
+  const photoBy: Record<string, {author: string; n: number; day: string; album: string; moved: boolean}> = {};
   for (const q of queue ?? []) {
     await sb.from("notify_queue").delete().eq("id", q.id);
     if (Date.now() - new Date(q.created_at).getTime() > 30 * 60e3) continue; // velho demais
-    if (q.op === "PHOTO") { const r = photoBy[q.author] ||= {n: 0, day: q.body?.day || ""}; r.n++; continue; }
     const b = q.body || {}, o = q.old || {};
+    if (q.op === "NOTE") { // recado para todos (teste ou aviso geral)
+      sent += await sendTo(users, {title: b.title || "China 2026", body: b.body || "", tag: `note-${q.id}`, url: APP_URL});
+      continue;
+    }
+    if (q.op === "ALBUM") {
+      sent += await sendTo(changesFor(q.author), {title: `${first(q.author)} criou o álbum “${b.name}”`, body: "Toquem para ver e colocar fotos", tag: `album-${b.album}`, url: `${APP_URL}?tab=fotos&album=${b.album}`});
+      continue;
+    }
+    if (q.op === "PHOTO" || q.op === "PHOTO_MOVE") {
+      const key = `${q.author}|${b.album || ""}|${q.op}`;
+      const r = photoBy[key] ||= {author: q.author, n: 0, day: b.day || "", album: b.album || "", moved: q.op === "PHOTO_MOVE"}; r.n++;
+      continue;
+    }
     const dayId = b.day || o.day || String(q.edit_id).split("~")[0];
     const day = days.find(d => d.id === dayId);
     const base = !String(q.edit_id).startsWith("n-");
     const baseRow = base && day ? (day.h || [])[+String(q.edit_id).split("~h")[1]] : null;
-    const title = b.title || o.title || (baseRow ? baseRow[1] : "item");
+    const title = (b.title || o.title || (baseRow ? baseRow[1] : "item")).replace(/^🛍\s*/, "");
     let verb = "";
     if (q.op === "DELETE") verb = base ? "voltou ao original" : "excluiu";
     else if (q.op === "INSERT") verb = b.kind === "new" ? "adicionou" : b.hidden ? "ocultou" : (b.t || b.title || b.note) ? "ajustou" : "";
     else if (!!b.hidden !== !!o.hidden) verb = b.hidden ? "ocultou" : "trouxe de volta";
-    else if (b.t !== o.t || b.title !== o.title || b.note !== o.note || b.day !== o.day) verb = "ajustou";
+    else if (b.day !== o.day) verb = "mudou de dia";
+    else if (b.t !== o.t || b.title !== o.title || b.note !== o.note) verb = "ajustou";
     if (!verb) continue; // só marcou como feito: não avisa
-    const who = P[q.author]?.name?.split(" ")[0] || "Alguém";
-    const to = users.filter(u => u !== q.author && P[u].p.changes && !quietNow(P[u].p, now.min));
-    sent += await sendTo(to, {
-      title: `${who} ${verb}: ${b.t ? b.t + " · " : ""}${title}`.slice(0, 120),
-      body: day ? `${fmtD(day.date)} · ${day.title}` : "Roteiro atualizado",
-      tag: `edit-${q.edit_id}`, url: `${APP_URL}?day=${encodeURIComponent(dayId)}`,
-    });
+    const e = editBy[q.author ?? ""] ||= {msgs: [], days: new Set()};
+    if (day) e.days.add(fmtD(day.date));
+    e.msgs.push({title: `${first(q.author)} ${verb}: ${b.t ? b.t + " · " : ""}${title}`.slice(0, 120),
+      body: day ? `${fmtD(day.date)} · ${day.title}` : "Roteiro atualizado", tag: `edit-${q.edit_id}`, url: `${APP_URL}?day=${encodeURIComponent(dayId)}`});
   }
-
-  // fotos novas: um aviso por pessoa, com o total
-  for (const [author, r] of Object.entries(photoBy)) {
-    const who = P[author]?.name?.split(" ")[0] || "Alguém", day = days.find(d => d.id === r.day);
-    const to = users.filter(u => u !== author && P[u].p.changes && !quietNow(P[u].p, now.min));
-    sent += await sendTo(to, {title: `${who} adicionou ${r.n} foto${r.n > 1 ? "s" : ""}`, body: day ? `${fmtD(day.date)} · ${day.title}` : "Álbum da viagem", tag: `photos-${author}`, url: APP_URL});
+  for (const [author, e] of Object.entries(editBy)) {
+    const to = changesFor(author || null);
+    if (e.msgs.length <= 2) { for (const m of e.msgs) sent += await sendTo(to, m); }
+    else sent += await sendTo(to, {title: `${first(author)} fez ${e.msgs.length} mudanças no roteiro`, body: e.days.size ? `Dias: ${[...e.days].join(", ")}` : "Abram o app para ver", tag: `edits-${author}`, url: APP_URL});
+  }
+  for (const r of Object.values(photoBy)) {
+    const day = days.find(d => d.id === r.day), alb = albumName(r.album);
+    const what = `${r.n} foto${r.n > 1 ? "s" : ""}`;
+    sent += await sendTo(changesFor(r.author), {
+      title: r.moved ? `${first(r.author)} colocou ${what} em “${alb}”` : `${first(r.author)} adicionou ${what}${alb ? ` em “${alb}”` : ""}`,
+      body: day ? `${fmtD(day.date)} · ${day.title}` : alb ? "Álbum da viagem" : "Fotos da viagem",
+      tag: `photos-${r.author}-${r.album}`, url: `${APP_URL}?tab=fotos${r.album ? `&album=${r.album}` : ""}`});
   }
 
   // 2) lembretes do dia (horário da China)
