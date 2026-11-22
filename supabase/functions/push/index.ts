@@ -62,10 +62,12 @@ async function tick() {
   let sent = 0;
 
   // 1) alterações feitas pelo grupo
-  const {data: queue} = await sb.from("notify_queue").select("*").order("id").limit(50);
+  const {data: queue} = await sb.from("notify_queue").select("*").order("id").limit(100);
+  const photoBy: Record<string, {n: number; day: string}> = {};
   for (const q of queue ?? []) {
     await sb.from("notify_queue").delete().eq("id", q.id);
     if (Date.now() - new Date(q.created_at).getTime() > 30 * 60e3) continue; // velho demais
+    if (q.op === "PHOTO") { const r = photoBy[q.author] ||= {n: 0, day: q.body?.day || ""}; r.n++; continue; }
     const b = q.body || {}, o = q.old || {};
     const dayId = b.day || o.day || String(q.edit_id).split("~")[0];
     const day = days.find(d => d.id === dayId);
@@ -85,6 +87,13 @@ async function tick() {
       body: day ? `${fmtD(day.date)} · ${day.title}` : "Roteiro atualizado",
       tag: `edit-${q.edit_id}`, url: `${APP_URL}?day=${encodeURIComponent(dayId)}`,
     });
+  }
+
+  // fotos novas: um aviso por pessoa, com o total
+  for (const [author, r] of Object.entries(photoBy)) {
+    const who = P[author]?.name?.split(" ")[0] || "Alguém", day = days.find(d => d.id === r.day);
+    const to = users.filter(u => u !== author && P[u].p.changes && !quietNow(P[u].p, now.min));
+    sent += await sendTo(to, {title: `${who} adicionou ${r.n} foto${r.n > 1 ? "s" : ""}`, body: day ? `${fmtD(day.date)} · ${day.title}` : "Álbum da viagem", tag: `photos-${author}`, url: APP_URL});
   }
 
   // 2) lembretes do dia (horário da China)
