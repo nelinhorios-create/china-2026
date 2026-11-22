@@ -240,16 +240,19 @@ body{margin:0}
 <section class="auth gut" id="auth" hidden>
   <div class="seal" aria-hidden="true">游</div>
   <h1>China 2026</h1>
-  <p class="lead">Guia de bolso da viagem. Entre com a sua conta de viajante.</p>
+  <p class="lead">Guia de bolso da viagem. Entre com o seu usuário.</p>
   <div class="seg" id="authMode"><button type="button" data-m="in" aria-pressed="true">Entrar</button><button type="button" data-m="up" aria-pressed="false">Criar conta</button></div>
   <form id="authForm">
-    <div class="fld" id="nameFld" hidden><label for="aName">Seu nome</label><input id="aName" autocomplete="name" maxlength="40"></div>
-    <div class="fld"><label for="aEmail">E-mail</label><input id="aEmail" type="email" autocomplete="email" required></div>
-    <div class="fld"><label for="aPass">Senha</label><input id="aPass" type="password" autocomplete="current-password" minlength="6" required></div>
+    <div class="fld"><label for="aUser">Usuário</label><input id="aUser" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="20" required placeholder="ex.: ana"></div>
+    <div class="fld"><label for="aPass">Senha</label><input id="aPass" type="password" autocomplete="current-password" minlength="6" required placeholder="pelo menos 6 caracteres"></div>
+    <div id="upFlds" hidden>
+      <div class="fld"><label for="aName">Seu nome</label><input id="aName" autocomplete="name" maxlength="40" placeholder="como aparece para o grupo"></div>
+      <div class="fld"><label for="aCode">Código da viagem</label><input id="aCode" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="40"></div>
+    </div>
     <p class="err" id="aErr" role="alert"></p>
     <button type="submit" class="pill pri" id="aBtn">Entrar</button>
   </form>
-  <p style="font-size:12.5px;color:var(--muted);margin-top:18px">Só os e-mails cadastrados como viajantes conseguem criar conta.</p>
+  <p style="font-size:12.5px;color:var(--muted);margin-top:18px">Para criar conta é preciso o código da viagem. Usuário: letras minúsculas, números, ponto, hífen ou _ (3 a 20).</p>
 </section>
 
 <div class="app" id="app" hidden>
@@ -739,7 +742,7 @@ async function renderAccount(){
     <h2 class="sec">Perfil</h2>
     <div class="card">
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px"><div class="avatar" id="av" style="--c:${esc(p.color || COLORS[1])}">${esc(initials(p.name))}</div>
-        <div style="min-width:0"><b>${esc(p.name || "Sem nome")}</b><p style="margin:0;word-break:break-all">${esc(S.me.email)}</p></div></div>
+        <div style="min-width:0"><b>${esc(p.name || "Sem nome")}</b><p style="margin:0;word-break:break-all">usuário: ${esc(userOf(S.me.email))}</p></div></div>
       <div class="fld"><label for="pName">Nome que aparece para o grupo</label><input id="pName" maxlength="40" value="${esc(p.name || "")}"></div>
       <div class="fld"><span class="lb">Cor</span><div class="swatches">${COLORS.map(c => `<button type="button" style="--c:${c}" data-c="${c}" aria-pressed="${(p.color || COLORS[1]) === c}" aria-label="Cor ${c}"></button>`).join("")}</div></div>
       <div class="acts"><button class="pill pri" id="pSave">Salvar perfil</button></div>
@@ -787,21 +790,29 @@ function showAuth(msg){
 }
 document.querySelectorAll("#authMode button").forEach(b => b.onclick = () => {
   authMode = b.dataset.m; document.querySelectorAll("#authMode button").forEach(x => x.setAttribute("aria-pressed", x === b));
-  $("#nameFld").hidden = authMode !== "up"; $("#aBtn").textContent = authMode === "up" ? "Criar conta" : "Entrar";
+  $("#upFlds").hidden = authMode !== "up"; $("#aBtn").textContent = authMode === "up" ? "Criar conta" : "Entrar";
   $("#aPass").autocomplete = authMode === "up" ? "new-password" : "current-password"; $("#aErr").textContent = "";
 });
+// usuário → e-mail interno (nunca recebe mensagem); o Supabase exige um e-mail por conta
+const USER_DOMAIN = "china2026.example.com";
+const userEmail = u => `${u}@${USER_DOMAIN}`;
+const userOf = email => String(email || "").split("@")[0];
 $("#authForm").onsubmit = async e => {
   e.preventDefault(); if(!sb) return;
-  const email = $("#aEmail").value.trim().toLowerCase(), password = $("#aPass").value, name = $("#aName").value.trim();
-  if(authMode === "up" && !name){ $("#aErr").textContent = "Escrevam o seu nome."; return; }
+  const user = $("#aUser").value.trim().toLowerCase(), password = $("#aPass").value, name = $("#aName").value.trim(), code = $("#aCode").value.trim();
+  if(!/^[a-z0-9._-]{3,20}$/.test(user)){ $("#aErr").textContent = "Usuário: 3 a 20 letras minúsculas, números, ponto, hífen ou _ (sem espaço nem acento)."; return; }
+  if(password.length < 6){ $("#aErr").textContent = "A senha precisa ter pelo menos 6 caracteres."; return; }
+  if(authMode === "up" && !code){ $("#aErr").textContent = "Digitem o código da viagem."; return; }
+  const email = userEmail(user);
   $("#aBtn").disabled = true; $("#aErr").textContent = "";
   try{
-    const r = authMode === "up" ? await sb.auth.signUp({email, password, options:{data:{name}}}) : await sb.auth.signInWithPassword({email, password});
+    const r = authMode === "up" ? await sb.auth.signUp({email, password, options:{data:{name:name || user, code}}}) : await sb.auth.signInWithPassword({email, password});
     if(r.error){
       const m = r.error.message || "";
-      $("#aErr").textContent = /Database error|not allowed|viajantes/i.test(m) ? "Este e-mail não está na lista de viajantes. Peçam para incluí-lo no Supabase."
-        : /Invalid login/i.test(m) ? "E-mail ou senha incorretos." : /already registered/i.test(m) ? "Este e-mail já tem conta. Use “Entrar”." : m;
-    } else if(!r.data.session){ $("#aErr").textContent = "Conta criada. Confirmem pelo link enviado ao e-mail e depois entrem."; }
+      $("#aErr").textContent = /Database error|Codigo|invalido/i.test(m) ? "Código da viagem errado (ou usuário inválido)."
+        : /Invalid login/i.test(m) ? "Usuário ou senha incorretos." : /already registered|already exists/i.test(m) ? "Esse usuário já existe. Escolham outro ou usem “Entrar”."
+        : /Password/i.test(m) ? "Senha fraca demais: use pelo menos 6 caracteres." : m;
+    } else if(!r.data.session){ $("#aErr").textContent = "Conta criada, mas o Supabase ainda pede confirmação por e-mail. Desliguem “Confirm email” em Authentication › Email."; }
     else startApp(r.data.session.user);
   } finally { $("#aBtn").disabled = false; }
 };
