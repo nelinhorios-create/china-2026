@@ -11,14 +11,14 @@ trajetos, frases em chinês com áudio, edições compartilhadas entre os viajan
 
 ### 1. Supabase: criar o projeto
 1. Em https://supabase.com, crie a conta e um projeto (região **Singapore** ou **Tokyo**).
-2. **Authentication › Sign In / Providers › Email:** deixe *Email* ligado e **desligue “Confirm email”**
-   (o e-mail gratuito do Supabase só envia para a equipe do projeto; a lista de viajantes já protege o cadastro).
+2. **Authentication › Sign In / Providers › Email:** deixe *Email* ligado e **desligue “Confirm email”**.
+   O login do app é só **usuário e senha**: o app transforma o usuário num e-mail interno
+   (`usuario@china2026.example.com`) que nunca recebe mensagem. Para criar conta é preciso o **código da viagem**.
 
 ### 2. Banco
 No **SQL Editor**, rode nesta ordem:
 1. `supabase/schema.sql` (tabelas, regras de acesso e tempo real).
-2. O arquivo **carga-roteiro.sql**, que o Claude entregou fora do GitHub. Antes de rodar, troque os 3 e-mails
-   de exemplo pelos e-mails reais dos viajantes.
+2. O arquivo **carga-roteiro.sql**, que o Claude entregou fora do GitHub (roteiro + código da viagem).
 
 ### 3. Ligar o site ao Supabase
 Em **Project Settings › API**, copie a *Project URL* e a chave *anon public* para o `config.js` deste repositório
@@ -36,7 +36,8 @@ Em **Project Settings › API**, copie a *Project URL* e a chave *anon public* p
    a cada minuto.
 
 ### 5. No celular de cada viajante
-1. Abram o site e criem a conta (nome, e-mail da lista e senha).
+1. Abram o site e criem a conta: usuário, senha (6+ caracteres), nome e o código da viagem.
+   Esqueceu a senha? No Supabase, *Authentication › Users*, apaguem o usuário e criem a conta de novo.
 2. **iPhone (iOS 16.4 ou mais novo):** no Safari, *Compartilhar › Adicionar à Tela de Início* e abram pelo ícone.
    **Android:** no Chrome, *Instalar app* (ou o botão “Instalar o app” na aba Conta).
 3. Aba **Conta › Notificações › Ativar neste aparelho** e depois **Enviar teste**.
