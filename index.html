@@ -230,6 +230,39 @@ body{margin:0}
 .switch select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 8px;font-size:14px}
 .by{font-size:10.5px;font-weight:700;margin-left:4px;color:var(--c,var(--gold))}
 .tabs nav{grid-template-columns:repeat(5,1fr)!important}
+
+/* abertura: os três viajantes atravessam a tela */
+#intro{position:fixed;inset:0;z-index:80;background:#F7C98E;overflow:hidden;transition:opacity .45s ease}
+#intro.out{opacity:0;pointer-events:none}
+#intro svg{width:100%;height:100%;display:block}
+#introSkip{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));border:0;background:rgba(122,31,22,.85);color:#fff;font:700 13px var(--f-body);padding:8px 14px;border-radius:999px;cursor:pointer}
+#intro .walker{animation:walk 4.6s linear forwards}
+#intro .bob{animation:bob .24s ease-in-out infinite alternate}
+#intro .leg,#intro .arm{transform-box:fill-box;transform-origin:50% 4%;animation:swing .48s ease-in-out infinite alternate}
+#intro .leg.b,#intro .arm.b{animation-delay:-.48s}
+#intro .wheel{transform-box:fill-box;transform-origin:center;animation:spin .4s linear infinite}
+#intro .case{animation:rattle .24s ease-in-out infinite alternate}
+#intro .lantern{transform-box:fill-box;transform-origin:50% 0;animation:sway 1.6s ease-in-out infinite alternate}
+#intro .lantern:nth-of-type(2n){animation-delay:-.8s}
+#intro .cloud{animation:drift 9s linear infinite}
+#intro .title{transform-box:fill-box;transform-origin:center;animation:pop .7s cubic-bezier(.2,1.6,.4,1) .15s both}
+#intro .sub{animation:rise .6s ease-out .55s both}
+#intro .stamp{transform-box:fill-box;transform-origin:center;animation:stamp .45s cubic-bezier(.2,1.8,.4,1) 2.6s both}
+#intro .petal{animation:fall linear infinite}
+#intro .spark{transform-box:fill-box;transform-origin:center;animation:burst 1.4s ease-out infinite}
+@keyframes walk{from{transform:translateX(-250px)}to{transform:translateX(400px)}}
+@keyframes bob{to{transform:translateY(-4px)}}
+@keyframes swing{from{transform:rotate(-20deg)}to{transform:rotate(20deg)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes rattle{to{transform:translateY(-1.5px) rotate(-1.5deg)}}
+@keyframes sway{from{transform:rotate(-7deg)}to{transform:rotate(7deg)}}
+@keyframes drift{from{transform:translateX(-60px)}to{transform:translateX(60px)}}
+@keyframes pop{from{transform:scale(.2) rotate(-8deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+@keyframes rise{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+@keyframes stamp{from{transform:scale(2.6) rotate(18deg);opacity:0}to{transform:scale(1) rotate(-8deg);opacity:1}}
+@keyframes fall{from{transform:translate(0,-40px) rotate(0)}to{transform:translate(-40px,760px) rotate(540deg)}}
+@keyframes burst{0%{transform:scale(.2);opacity:0}30%{opacity:1}100%{transform:scale(1.4);opacity:0}}
+@media (prefers-reduced-motion:reduce){#intro *{animation:none!important}#intro .walker{transform:translateX(70px)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -277,6 +310,7 @@ body{margin:0}
   <button role="tab" data-tab="conta" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.6 4-5.3 7.5-5.3s6.3 1.7 7.5 5.3"/></svg>Conta</button>
 </nav></div>
 <div id="layer"></div>
+<div id="intro" hidden aria-label="Abertura: os três viajantes atravessam a tela"><svg id="introSvg" viewBox="0 0 400 720" preserveAspectRatio="xMidYMid slice" role="img"></svg><button id="introSkip" type="button">Pular</button></div>
 
 <script>
 // O roteiro não fica no código (o repositório é público): vem da tabela "trip" do Supabase depois do login
@@ -817,8 +851,82 @@ $("#authForm").onsubmit = async e => {
   } finally { $("#aBtn").disabled = false; }
 };
 
+/* ---------- Abertura animada ---------- */
+// Os três viajantes em desenho (inspirados nas fotos, sem usar as fotos), com roupa chinesa e mala de rodinha.
+// Coordenadas de cada personagem: largura ~80, pés em y=170.
+function traveler(o){
+  const dk = "#22201e", legsTop = o.qipao ? 140 : 118;
+  const legs = [0, 1].map(i => `<g class="leg${i ? " b" : ""}"><rect x="${i ? 42 : 27}" y="${legsTop - 4}" width="11" height="${170 - legsTop}" rx="5" fill="${o.qipao ? o.skin : o.pants}"/><rect x="${i ? 40 : 25}" y="164" width="15" height="7" rx="3.5" fill="${dk}"/></g>`).join("");
+  const body = o.qipao
+    ? `<path d="M19 72 Q40 63 61 72 L66 148 Q40 155 14 148 Z" fill="${o.cloth}"/><path d="M40 69 Q53 76 57 90" stroke="${o.trim}" stroke-width="2.6" fill="none"/><path d="M16 146 Q40 152 64 146" stroke="${o.trim}" stroke-width="3" fill="none"/><path d="M52 118 L56 148" stroke="${o.trim}" stroke-width="1.6"/><circle cx="31" cy="98" r="3" fill="${o.trim}" opacity=".7"/><circle cx="47" cy="110" r="2.5" fill="${o.trim}" opacity=".7"/><circle cx="36" cy="128" r="3" fill="${o.trim}" opacity=".7"/>`
+    : `<path d="M17 72 Q40 63 63 72 L67 124 Q40 131 13 124 Z" fill="${o.cloth}"/><path d="M40 72 V126" stroke="${o.trim}" stroke-width="1.6"/>${[84, 95, 106, 117].map(y => `<path d="M34 ${y} H46" stroke="${o.trim}" stroke-width="2.6" stroke-linecap="round"/>`).join("")}<path d="M14 122 Q40 129 66 122" stroke="${o.trim}" stroke-width="3" fill="none"/>`;
+  const collar = `<path d="M32 64 H48 V72 Q40 75 32 72 Z" fill="${o.trim}"/>`;
+  const sleeve = o.cloth;
+  const armL = `<rect x="11" y="73" width="10" height="44" rx="5" fill="${sleeve}" transform="rotate(22 16 76)"/><circle cx="1" cy="116" r="5" fill="${o.skin}"/>`;
+  const armR = `<g class="arm b"><rect x="59" y="73" width="10" height="42" rx="5" fill="${sleeve}"/><circle cx="64" cy="117" r="5" fill="${o.skin}"/></g>`;
+  const suitcase = `<g class="case"><path d="M1 116 L-12 132" stroke="${dk}" stroke-width="3.5" stroke-linecap="round"/><rect x="-40" y="131" width="36" height="33" rx="6" fill="${o.bag}"/><path d="M-31 131 V164 M-13 131 V164" stroke="rgba(0,0,0,.18)" stroke-width="3"/><rect x="-30" y="143" width="16" height="7" rx="2" fill="rgba(255,255,255,.55)"/>
+    <circle class="wheel" cx="-33" cy="167" r="4.5" fill="${dk}" stroke="#777" stroke-width="1.5" stroke-dasharray="3 2"/><circle class="wheel" cx="-11" cy="167" r="4.5" fill="${dk}" stroke="#777" stroke-width="1.5" stroke-dasharray="3 2"/></g>`;
+  const face = `<circle cx="21" cy="47" r="4.5" fill="${o.skin}"/><circle cx="59" cy="47" r="4.5" fill="${o.skin}"/><circle cx="40" cy="45" r="19" fill="${o.skin}"/>
+    <circle cx="33" cy="45" r="2.1" fill="${dk}"/><circle cx="47" cy="45" r="2.1" fill="${dk}"/><circle cx="29" cy="53" r="3" fill="#E8836B" opacity=".35"/><circle cx="51" cy="53" r="3" fill="#E8836B" opacity=".35"/>`;
+  const glasses = o.glasses ? `<rect x="26.5" y="39.5" width="12" height="10" rx="3.5" fill="rgba(255,255,255,.18)" stroke="${o.glasses}" stroke-width="2"/><rect x="41.5" y="39.5" width="12" height="10" rx="3.5" fill="rgba(255,255,255,.18)" stroke="${o.glasses}" stroke-width="2"/><path d="M38.5 44 H41.5 M26.5 43 L21.5 42 M53.5 43 L58.5 42" stroke="${o.glasses}" stroke-width="1.8"/>` : "";
+  const smile = o.grin ? `<path d="M31 53 Q40 63 49 53 Z" fill="#fff" stroke="${dk}" stroke-width="1.6" stroke-linejoin="round"/>` : `<path d="M33.5 54 Q40 59.5 46.5 54" stroke="${dk}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  return `<g>${suitcase}${legs}${armL}${body}${collar}${armR}${face}${o.hairBack || ""}${o.beard || ""}${smile}${o.mustache || ""}${glasses}${o.hair || ""}${o.hat || ""}</g>`;
+}
+const TRAVELERS = [
+  // de óculos, cabelo escuro e cacheado, bigode e cavanhaque: túnica azul (como a camisa da foto)
+  {skin:"#E9B98F", pants:"#23262B", cloth:"#2B5BA8", trim:"#F0C24B", bag:"#EE8A3A", glasses:"#2A2622",
+   hair:`<g fill="#1F1B18"><circle cx="25" cy="33" r="8.5"/><circle cx="32" cy="26" r="9.5"/><circle cx="42" cy="23.5" r="10"/><circle cx="52" cy="28" r="9"/><circle cx="57" cy="37" r="6"/><circle cx="22" cy="40" r="5.5"/></g>`,
+   mustache:`<path d="M34.5 51 Q40 48.6 45.5 51" stroke="#1F1B18" stroke-width="2.6" fill="none" stroke-linecap="round"/><ellipse cx="40" cy="61.5" rx="3.6" ry="2.6" fill="#1F1B18"/>`},
+  // de óculos, cabelo castanho ondulado na altura do queixo: qipao vermelho com flor no cabelo
+  {skin:"#F4D2B8", pants:"#23262B", cloth:"#C8302C", trim:"#F2C14E", bag:"#2C9C8A", glasses:"#3B2A22", qipao:true,
+   hairBack:`<path d="M19 47 Q16 21 40 21 Q64 21 61 47 Q65 59 59 66 Q55 58 56.5 47 Q53 31 40 31 Q27 31 23.5 47 Q25 58 21 66 Q15 59 19 47 Z" fill="#8B5E3C"/>`,
+   hair:`<path d="M22 40 Q26 24 42 25 Q55 26 58 38 Q50 30 41 31 Q30 31 22 40 Z" fill="#8B5E3C"/><circle cx="57" cy="29" r="4.2" fill="#F48FB1"/><circle cx="57" cy="29" r="1.6" fill="#F2C14E"/><circle cx="21" cy="55" r="1.6" fill="#E9C46A"/><circle cx="59" cy="55" r="1.6" fill="#E9C46A"/>`},
+  // cabelo escuro curto, barba grisalha e sorriso largo: túnica creme com detalhes vermelhos e chapéu chinês
+  {skin:"#D9A47C", pants:"#2E2A26", cloth:"#F3EEE3", trim:"#B3362A", bag:"#6E4A9E", grin:true,
+   hair:`<path d="M21.5 41 Q21 22 40 22 Q59 22 58.5 41 Q55 30 40 30 Q25 30 21.5 41 Z" fill="#2A2420"/>`,
+   beard:`<path d="M21.5 45 Q23 67 40 69 Q57 67 58.5 45 Q56 58 48 59.5 Q40 63 32 59.5 Q24 58 21.5 45 Z" fill="#9A9792"/><path d="M33 51.5 Q40 48.5 47 51.5" stroke="#7E7B76" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+   hat:`<path d="M21 31 Q22 14 40 14 Q58 14 59 31 Q40 25 21 31 Z" fill="#1E1B19"/><path d="M21 31 Q40 25 59 31" stroke="#B3362A" stroke-width="2.4" fill="none"/><circle cx="40" cy="12" r="3.4" fill="#B3362A"/>`}
+];
+function introScene(){
+  const lantern = (x, s) => `<g transform="translate(${x} 34)"><g class="lantern"><path d="M0 0 V${12 * s}" stroke="#7A1F16" stroke-width="1.5"/><g transform="translate(0 ${12 * s}) scale(${s})"><rect x="-8" y="-3" width="16" height="6" rx="2" fill="#E8B84A"/><ellipse cx="0" cy="20" rx="19" ry="21" fill="#D7322B"/><path d="M-12 20 Q0 6 12 20 Q0 34 -12 20" stroke="#B0241F" stroke-width="1.5" fill="none"/><path d="M0 0 V41" stroke="#B0241F" stroke-width="1.2"/><rect x="-8" y="38" width="16" height="6" rx="2" fill="#E8B84A"/><path d="M-3 44 L-4 60 M0 44 V62 M3 44 L4 60" stroke="#E8B84A" stroke-width="1.6"/><text x="0" y="26" text-anchor="middle" font-family="Noto Serif SC,serif" font-weight="900" font-size="15" fill="#F7D27A">福</text></g></g></g>`;
+  const petals = Array.from({length:16}, (_, i) => `<circle class="petal" cx="${(i * 53 + 17) % 420}" cy="0" r="${2 + (i % 3)}" fill="${i % 2 ? "#E8505B" : "#F2C14E"}" style="animation-duration:${4 + (i % 5) * .7}s;animation-delay:${-(i * .37).toFixed(2)}s"/>`).join("");
+  const walkers = TRAVELERS.map((o, i) => `<g class="walker"><g transform="translate(${230 - i * 118} 373) scale(1.12)"><g class="bob" style="animation-delay:${(-i * .09).toFixed(2)}s">${traveler(o)}</g></g></g>`).join("");
+  return `<defs><linearGradient id="isky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCE7C4"/><stop offset=".55" stop-color="#F8C27E"/><stop offset="1" stop-color="#F09A62"/></linearGradient></defs>
+    <rect width="400" height="720" fill="url(#isky)"/>
+    <circle cx="300" cy="360" r="70" fill="#FFDD8F" opacity=".9"/>
+    <g class="cloud" fill="#fff" opacity=".7"><ellipse cx="80" cy="250" rx="40" ry="11"/><ellipse cx="105" cy="242" rx="24" ry="10"/><ellipse cx="300" cy="215" rx="34" ry="9"/></g>
+    <path d="M-10 560 V430 Q5 380 18 432 V470 Q30 340 44 470 V420 Q56 365 66 425 V560 Z M300 560 V420 Q312 330 326 420 V460 Q340 380 352 455 V400 Q366 350 378 410 V560 Z" fill="#C98258" opacity=".55"/>
+    <path d="M-10 560 L-10 500 Q60 470 120 495 T250 480 T410 470 L410 560 Z" fill="#B66A45" opacity=".75"/>
+    <path d="M-10 505 Q60 476 120 500 T250 486 T410 476" stroke="#8A4A2E" stroke-width="7" fill="none"/>
+    <path d="M-10 499 Q60 470 120 494 T250 480 T410 470" stroke="#8A4A2E" stroke-width="5" fill="none" stroke-dasharray="5 5"/>
+    <rect x="232" y="452" width="16" height="22" fill="#8A4A2E"/><path d="M229 452 H251 M232 448 H248" stroke="#8A4A2E" stroke-width="4"/>
+    <rect x="0" y="545" width="400" height="175" fill="#E7CFA4"/><rect x="0" y="545" width="400" height="10" fill="#CFAE7C"/>
+    ${Array.from({length:9}, (_, i) => `<path d="M${i * 50 - 10} 600 H${i * 50 + 30}" stroke="#D6B98A" stroke-width="3" stroke-linecap="round"/>`).join("")}
+    <path d="M-10 26 Q200 64 410 26" stroke="#7A1F16" stroke-width="2" fill="none"/>
+    ${lantern(42, 1)}${lantern(128, .8)}${lantern(272, .8)}${lantern(358, 1)}
+    <g transform="translate(70 300)"><g class="spark"><path d="M0 -16 V16 M-16 0 H16 M-11 -11 L11 11 M-11 11 L11 -11" stroke="#F2C14E" stroke-width="2.5" stroke-linecap="round"/></g></g>
+    <g transform="translate(335 280)"><g class="spark" style="animation-delay:-.7s"><path d="M0 -14 V14 M-14 0 H14 M-10 -10 L10 10 M-10 10 L10 -10" stroke="#E8505B" stroke-width="2.5" stroke-linecap="round"/></g></g>
+    <g class="title"><text x="200" y="168" text-anchor="middle" font-family="Bricolage Grotesque,system-ui,sans-serif" font-weight="800" font-size="56" fill="#7A1F16" letter-spacing="-1">China 2026</text></g>
+    <g class="sub"><text x="200" y="212" text-anchor="middle" font-family="Noto Serif SC,serif" font-weight="900" font-size="30" fill="#B3362A" letter-spacing="6">一路顺风</text>
+      <text x="200" y="238" text-anchor="middle" font-family="Figtree,system-ui,sans-serif" font-weight="600" font-size="13.5" fill="#7A1F16">boa viagem! · Xangai → Pequim · 9 a 30/12</text></g>
+    ${walkers}
+    <g transform="translate(200 660)"><g class="stamp"><rect x="-30" y="-30" width="60" height="60" rx="8" fill="#B3362A"/><text x="0" y="13" text-anchor="middle" font-family="Noto Serif SC,serif" font-weight="900" font-size="38" fill="#FFF3E0">游</text></g></g>
+    ${petals}`;
+}
+let introPlayed = false;
+function playIntro(){
+  if(introPlayed) return; introPlayed = true;
+  const el = $("#intro"); $("#introSvg").innerHTML = introScene(); el.hidden = false; el.classList.remove("out"); el.style.opacity = "1";
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let done = false;
+  const end = () => { if(done) return; done = true; el.classList.add("out"); el.style.opacity = "0"; setTimeout(() => { el.hidden = true; $("#introSvg").innerHTML = ""; }, 460); };
+  setTimeout(end, reduce ? 1600 : 4500);
+  el.onclick = end;
+}
+
 /* ---------- Início ---------- */
 async function startApp(user){
+  playIntro();
   S.me = user;
   $("#auth").hidden = true; $("#app").hidden = false; $("#tabs").hidden = false;
   const cached = ls.get("guia26.trip", null); if(cached) setTrip(cached);
