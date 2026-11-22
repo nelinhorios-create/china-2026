@@ -1,14 +1,13 @@
 -- China 2026 · agendador das notificações (roda a função "push" a cada minuto)
--- Antes de rodar: troque PROJECT_REF pelo código do projeto (o pedaço antes de .supabase.co)
--- e ANON_KEY pela chave anon public (a mesma do config.js).
+-- A função foi publicada com "Verify JWT" desligado, então a chamada não leva chave nenhuma.
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
 select cron.unschedule('china26-push') where exists (select 1 from cron.job where jobname = 'china26-push');
 select cron.schedule('china26-push', '* * * * *', $$
   select net.http_post(
-    url := 'https://PROJECT_REF.supabase.co/functions/v1/push',
-    headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer ANON_KEY'),
+    url := 'https://uashjywpybbeifbujsko.supabase.co/functions/v1/push',
+    headers := jsonb_build_object('Content-Type', 'application/json'),
     body := '{"action":"tick"}'::jsonb
   );
 $$);
